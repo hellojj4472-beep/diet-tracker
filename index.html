@@ -717,12 +717,22 @@
   } catch (e) { /* localStorage 사용 불가 시 조용히 무시 */ }
 
   // 예전 버전(수량 조절 기능 이전)에 저장된 항목도 수량 조절 가능하도록 보정
+  // "닭가슴살(구운) 100g" 처럼 이름 끝에 수량+단위가 붙어있으면 그 숫자를 그대로 살려서 조절 가능하게 함
+  const UNIT_SUFFIX_RE = /^(.*?)\s*(\d+(?:\.\d+)?)(g|ml|공기|개|인분|그릇|줄|장|조각|잔|캔|봉|접시|컵)$/;
   function ensureItemFields_(it) {
     if (it.perKcal === undefined) {
-      it.perCarb = it.carb; it.perProt = it.prot; it.perFat = it.fat; it.perSugar = it.sugar; it.perKcal = it.kcal;
-      it.qty = it.qty || 1;
-      it.unitLabel = it.unitLabel || '배';
-      it.label = it.label || it.name;
+      const m = it.name && it.name.match(UNIT_SUFFIX_RE);
+      if (m && parseFloat(m[2]) > 0) {
+        it.label = m[1].trim();
+        it.qty = parseFloat(m[2]);
+        it.unitLabel = m[3];
+      } else {
+        it.label = it.label || it.name;
+        it.qty = it.qty || 1;
+        it.unitLabel = it.unitLabel || '배';
+      }
+      it.perCarb = it.carb / it.qty; it.perProt = it.prot / it.qty; it.perFat = it.fat / it.qty;
+      it.perSugar = it.sugar / it.qty; it.perKcal = it.kcal / it.qty;
     }
   }
   Object.values(state.meals).forEach(items => items.forEach(ensureItemFields_));
