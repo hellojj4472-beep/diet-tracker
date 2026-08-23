@@ -494,10 +494,10 @@
     <div class="day-total">
       <div><div class="label">하루 누적 섭취</div><div class="value" id="dayTotalKcal">0 kcal</div></div>
       <div class="macros">
-        <span>탄 <b id="dayCarb">0</b>g</span>
-        <span>단 <b id="dayProt">0</b>g</span>
-        <span>지 <b id="dayFat">0</b>g</span>
-        <span>당 <b id="daySugar">0</b>g</span>
+        <span>탄수화물 <b id="dayCarb">0</b>g</span>
+        <span>단백질 <b id="dayProt">0</b>g</span>
+        <span>지방 <b id="dayFat">0</b>g</span>
+        <span>단순당 <b id="daySugar">0</b>g</span>
       </div>
     </div>
   </section>
@@ -772,7 +772,7 @@
         <h3>${meal}</h3>
         <span class="meal-subtotal" data-role="subtotal">0 kcal</span>
       </div>
-      <div class="meal-macro-line" data-role="macroline">탄0 · 단0 · 지0 · 당0 (g)</div>
+      <div class="meal-macro-line" data-role="macroline">탄수화물 0 · 단백질 0 · 지방 0 · 단순당 0 (g)</div>
       <div class="search-box">
         <label>음식 검색 (식약처 식품영양성분DB 기반 · ${FOOD_DB.length}종)</label>
         <input type="text" class="food-search" placeholder="예: 닭가슴살, 현미밥, 라면…" autocomplete="off">
@@ -791,10 +791,10 @@
         <div class="manual-form">
           <input type="text" class="m-name" placeholder="음식 이름">
           <div class="manual-grid">
-            <input type="number" class="m-carb" placeholder="탄(g)" min="0">
-            <input type="number" class="m-prot" placeholder="단(g)" min="0">
-            <input type="number" class="m-fat" placeholder="지(g)" min="0">
-            <input type="number" class="m-sugar" placeholder="당(g)" min="0">
+            <input type="number" class="m-carb" placeholder="탄수화물(g)" min="0">
+            <input type="number" class="m-prot" placeholder="단백질(g)" min="0">
+            <input type="number" class="m-fat" placeholder="지방(g)" min="0">
+            <input type="number" class="m-sugar" placeholder="단순당(g)" min="0">
           </div>
           <button type="button" class="btn small add-manual-btn">이 끼니에 추가 (kcal 자동계산)</button>
         </div>
@@ -929,7 +929,7 @@
       resultsEl.innerHTML = '<div class="empty-row">검색 결과 없음 — 직접 입력을 이용해보세요</div>';
     } else {
       resultsEl.innerHTML = matches.map(f =>
-        `<button type="button" data-food="${f.label}"><span>${foodDisplayBase(f)}</span><span class="macro">${f.kcal}kcal · 탄${f.carb} 단${f.prot} 지${f.fat}</span></button>`
+        `<button type="button" data-food="${f.label}"><span>${foodDisplayBase(f)}</span><span class="macro">${f.kcal}kcal · 탄수화물${f.carb} 단백질${f.prot} 지방${f.fat}</span></button>`
       ).join('') + (allMatches.length > matches.length ? `<div class="empty-row">${allMatches.length - matches.length}개 더 있어요 · 좀 더 구체적으로 입력해보세요</div>` : '');
     }
     resultsEl.style.display = 'block';
@@ -966,7 +966,7 @@
               </td>
               <td class="macro-cell">
                 <div class="kcal-val">${it.kcal}kcal</div>
-                <div class="macro-mini">탄${it.carb} 단${it.prot} 지${it.fat} 당${it.sugar}</div>
+                <div class="macro-mini">탄수화물${it.carb} 단백질${it.prot} 지방${it.fat} 단순당${it.sugar}</div>
               </td>
               <td class="rm"><button type="button" data-idx="${idx}" aria-label="삭제">×</button></td>
             </tr>`;
@@ -974,7 +974,7 @@
         : '<tr><td class="empty-row" colspan="3">아직 추가된 음식이 없어요</td></tr>';
       const sub = sumMacros(items);
       cardEl.querySelector('[data-role="subtotal"]').textContent = sub.kcal + ' kcal';
-      cardEl.querySelector('[data-role="macroline"]').textContent = `탄${sub.carb} · 단${sub.prot} · 지${sub.fat} · 당${sub.sugar} (g)`;
+      cardEl.querySelector('[data-role="macroline"]').textContent = `탄수화물 ${sub.carb} · 단백질 ${sub.prot} · 지방 ${sub.fat} · 단순당 ${sub.sugar} (g)`;
     });
   }
 
