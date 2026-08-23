@@ -366,6 +366,9 @@
   .qty-edit { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
   .qty-edit .item-qty { width: 56px; padding: 4px 5px; font-size: 12px; }
   .qty-edit .unit-label { font-size: 11.5px; color: var(--ink-faint); }
+  .macro-cell { text-align: right; white-space: nowrap; }
+  .macro-cell .kcal-val { font-weight: 700; }
+  .macro-cell .macro-mini { font-size: 10.5px; color: var(--ink-faint); margin-top: 2px; }
   table.food-table tr:last-child td { border-bottom: none; }
   table.food-table td.rm button { background:none; border:none; color: var(--ink-faint); cursor:pointer; font-size: 15px; line-height:1; padding: 0 2px; }
   table.food-table td.rm button:hover { color: var(--bad); }
@@ -712,6 +715,17 @@
     if (saved) Object.assign(state, JSON.parse(saved));
   } catch (e) { /* localStorage 사용 불가 시 조용히 무시 */ }
 
+  // 예전 버전(수량 조절 기능 이전)에 저장된 항목도 수량 조절 가능하도록 보정
+  function ensureItemFields_(it) {
+    if (it.perKcal === undefined) {
+      it.perCarb = it.carb; it.perProt = it.prot; it.perFat = it.fat; it.perSugar = it.sugar; it.perKcal = it.kcal;
+      it.qty = it.qty || 1;
+      it.unitLabel = it.unitLabel || '배';
+      it.label = it.label || it.name;
+    }
+  }
+  Object.values(state.meals).forEach(items => items.forEach(ensureItemFields_));
+
   function saveState() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
   }
@@ -948,7 +962,10 @@
                 ${it.label || it.name}
                 ${editable ? `<div class="qty-edit"><input type="number" class="item-qty" data-idx="${idx}" value="${it.qty}" min="0.1" step="${step}"><span class="unit-label">${it.unitLabel}</span></div>` : ''}
               </td>
-              <td>${it.kcal}kcal</td>
+              <td class="macro-cell">
+                <div class="kcal-val">${it.kcal}kcal</div>
+                <div class="macro-mini">탄${it.carb} 단${it.prot} 지${it.fat} 당${it.sugar}</div>
+              </td>
               <td class="rm"><button type="button" data-idx="${idx}" aria-label="삭제">×</button></td>
             </tr>`;
           }).join('')
