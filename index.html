@@ -1,0 +1,1031 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다이어트표</title>
+<meta name="description" content="하루 식사·운동·수면·배변을 한 화면에서 기록하는 개인용 다이어트 트래커">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #F1EEE6;
+    --paper-raised: #FBF9F4;
+    --paper-sunken: #E9E5D9;
+    --ink: #2A2822;
+    --ink-soft: #6E6858;
+    --ink-faint: #9B9583;
+    --line: #DEDACB;
+    --accent: #1F6F5C;
+    --accent-ink: #0F4438;
+    --accent-soft: #DCEAE4;
+    --good: #4C8B3B;
+    --good-soft: #E2EDDC;
+    --warn: #A8722E;
+    --warn-soft: #F1E4CC;
+    --bad: #B23F32;
+    --bad-soft: #F3DFDA;
+    --radius-s: 8px;
+    --radius-m: 14px;
+    --radius-l: 20px;
+    --shadow: 0 1px 2px rgba(42,40,34,0.06), 0 8px 24px -12px rgba(42,40,34,0.18);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191C18;
+      --paper-raised: #232720;
+      --paper-sunken: #14160F;
+      --ink: #ECE8DC;
+      --ink-soft: #A9A290;
+      --ink-faint: #726C5C;
+      --line: #34382E;
+      --accent: #5FC0A0;
+      --accent-ink: #BFF0DC;
+      --accent-soft: #223530;
+      --good: #86C96D;
+      --good-soft: #24331E;
+      --warn: #E0AD62;
+      --warn-soft: #3A2E1B;
+      --bad: #E2897A;
+      --bad-soft: #3A211D;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #191C18;
+    --paper-raised: #232720;
+    --paper-sunken: #14160F;
+    --ink: #ECE8DC;
+    --ink-soft: #A9A290;
+    --ink-faint: #726C5C;
+    --line: #34382E;
+    --accent: #5FC0A0;
+    --accent-ink: #BFF0DC;
+    --accent-soft: #223530;
+    --good: #86C96D;
+    --good-soft: #24331E;
+    --warn: #E0AD62;
+    --warn-soft: #3A2E1B;
+    --bad: #E2897A;
+    --bad-soft: #3A211D;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Gowun Dodum', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 32px 20px 80px;
+  }
+
+  h1, h2, h3, .display {
+    font-family: 'Gowun Batang', serif;
+    font-weight: 700;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+  /* ---------- header ---------- */
+  header.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  header.top .title-block { display: flex; align-items: baseline; gap: 12px; }
+  header.top h1 { font-size: 28px; margin: 0; }
+  header.top .tagline { color: var(--ink-soft); font-size: 13px; }
+  header.top .date {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  /* ---------- section headings ---------- */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .section-head h2 { font-size: 18px; margin: 0; }
+  .section-head .sub { font-family: 'Gowun Dodum', sans-serif; font-weight: 400; font-size: 12px; color: var(--ink-faint); }
+
+  /* ---------- layout ---------- */
+  .grid-top {
+    display: grid;
+    grid-template-columns: 1.05fr 1.3fr;
+    gap: 18px;
+  }
+  @media (max-width: 760px) {
+    .grid-top { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+  .card h2 {
+    font-size: 16px;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card h2 .sub { font-family: 'Gowun Dodum', sans-serif; font-weight: 400; font-size: 12px; color: var(--ink-faint); }
+
+  /* ---------- summary card ---------- */
+  .summary-hero {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .summary-hero .num {
+    font-family: 'Gowun Batang', serif;
+    font-weight: 700;
+    font-size: 40px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-ink);
+  }
+  .summary-hero .unit { color: var(--ink-soft); font-size: 14px; }
+  .summary-hero .net-tag {
+    margin-left: auto;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    white-space: nowrap;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .stat {
+    background: var(--paper-sunken);
+    border-radius: var(--radius-m);
+    padding: 10px 12px;
+  }
+  .stat .k { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.02em; }
+  .stat .v { font-variant-numeric: tabular-nums; font-size: 17px; margin-top: 2px; }
+  .stat .v small { font-size: 11px; color: var(--ink-faint); font-weight: 400; }
+
+  .pill-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .pill {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .pill.good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  .pill.neutral { color: var(--ink-soft); }
+
+  /* ---------- trend chart ---------- */
+  .chart-legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .chart-legend i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+  svg.trend { width: 100%; height: auto; overflow: visible; }
+  svg.trend .grid-line { stroke: var(--line); stroke-width: 1; }
+  svg.trend .axis-label { fill: var(--ink-faint); font-size: 10px; font-family: 'Gowun Dodum', sans-serif; }
+  svg.trend .line-weight { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  svg.trend .line-kcal { fill: none; stroke: var(--warn); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 4 3; }
+  svg.trend .dot-weight { fill: var(--accent); }
+  svg.trend .dot-kcal { fill: var(--warn); }
+  svg.trend .dot-today { stroke: var(--paper-raised); stroke-width: 2; }
+
+  /* ---------- recommendation banner ---------- */
+  .rec-banner {
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius: var(--radius-l);
+    padding: 18px 22px;
+  }
+  .rec-banner .rec-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--accent-ink);
+    letter-spacing: 0.03em;
+    margin-bottom: 10px;
+  }
+  .rec-banner .rec-head svg { width: 14px; height: 14px; }
+  .rec-list { display: flex; flex-direction: column; gap: 8px; }
+  .rec-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+  .rec-item::before {
+    content: "";
+    width: 5px; height: 5px;
+    margin-top: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ---------- form basics ---------- */
+  label { font-size: 12.5px; color: var(--ink-soft); display: block; margin-bottom: 5px; }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 14px;
+    padding: 9px 11px;
+    border-radius: var(--radius-s);
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 12px; margin-bottom: 4px; }
+  .check-row { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; font-size: 13px; color: var(--ink-soft); }
+  .check-row input { width: auto; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .btn {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 13.5px;
+    padding: 9px 16px;
+    border-radius: var(--radius-s);
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn.small { padding: 6px 12px; font-size: 12.5px; }
+  .btn.subtle { background: var(--paper-sunken); border-color: var(--line); color: var(--ink); }
+
+  .search-hint { font-size: 11.5px; color: var(--ink-faint); margin-top: 6px; }
+
+  /* ---------- meal grid ---------- */
+  .meal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 760px) {
+    .meal-grid { grid-template-columns: 1fr; }
+  }
+  .meal-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+  }
+  .meal-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .meal-card-head h3 { font-size: 15px; margin: 0; }
+  .meal-card-head .meal-subtotal { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--accent-ink); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; }
+
+  .search-box { position: relative; margin-bottom: 10px; }
+  .search-results {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius-m);
+    box-shadow: var(--shadow); z-index: 5; max-height: 200px; overflow-y: auto;
+  }
+  .search-results button {
+    width: 100%; text-align: left; background: none; border: none; padding: 8px 11px;
+    font-family: 'Gowun Dodum', sans-serif; font-size: 13px; color: var(--ink); cursor: pointer;
+    display: flex; justify-content: space-between; gap: 8px;
+  }
+  .search-results button:hover { background: var(--accent-soft); }
+  .search-results .macro { color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .search-results .empty-row { padding: 9px 11px; color: var(--ink-faint); font-size: 12.5px; }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .chip {
+    font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px dashed var(--line);
+    background: var(--paper); color: var(--ink-soft); cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .chip.tag-selected { background: var(--accent); border-style: solid; border-color: var(--accent); color: #fff; }
+
+  .pending-add {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: var(--accent-soft); border-radius: var(--radius-m);
+    padding: 10px 12px; margin-bottom: 10px;
+  }
+  .pending-add .pending-label { font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+  .pending-add .pending-qty { width: 72px; text-align: center; padding: 6px 4px; }
+  .pending-add .pending-unit { font-size: 12.5px; color: var(--ink-soft); }
+
+  details.manual-add-toggle { margin-bottom: 10px; }
+  details.manual-add-toggle summary { cursor: pointer; font-size: 12.5px; color: var(--ink-soft); }
+  .manual-form { margin-top: 10px; padding: 10px; background: var(--paper-sunken); border-radius: var(--radius-m); }
+  .manual-form input { margin-bottom: 8px; }
+  .manual-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+  .manual-grid input { text-align: center; padding: 8px 4px; }
+
+  table.food-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.food-table th { text-align: left; font-size: 10.5px; color: var(--ink-faint); font-weight: 400; padding: 4px; border-bottom: 1px solid var(--line); }
+  table.food-table td { padding: 6px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.food-table td.name { font-variant-numeric: normal; }
+  table.food-table tr:last-child td { border-bottom: none; }
+  table.food-table td.rm button { background:none; border:none; color: var(--ink-faint); cursor:pointer; font-size: 15px; line-height:1; padding: 0 2px; }
+  table.food-table td.rm button:hover { color: var(--bad); }
+  .empty-row { color: var(--ink-faint); font-size: 12.5px; padding: 8px 4px; }
+
+  .day-total {
+    margin-top: 16px; padding: 16px 18px; background: var(--paper-sunken); border-radius: var(--radius-m);
+    display: flex; flex-wrap: wrap; gap: 18px; align-items: baseline;
+    border: 1px solid var(--line);
+  }
+  .day-total .label { font-size: 12px; color: var(--ink-soft); }
+  .day-total .value { font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .day-total .macros { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  /* ---------- exercise ---------- */
+  .exercise-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .exercise-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; background: var(--paper-sunken); border-radius: var(--radius-m); font-size: 13.5px;
+  }
+  .exercise-item .kcal { font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 700; }
+
+  /* ---------- etc ---------- */
+  .bowel-toggle { display: flex; gap: 8px; }
+  .bowel-toggle button {
+    flex: 1; padding: 10px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink-soft); cursor: pointer; font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px;
+  }
+  .bowel-toggle button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .proto-note {
+    font-size: 12px; color: var(--ink-faint); text-align: center;
+    padding-top: 16px; border-top: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-block">
+      <h1>다이어트표</h1>
+      <span class="tagline">오늘 하루의 식사·운동·수면·배변을 한 화면에서 기록하세요</span>
+    </div>
+    <div class="date" id="todayDate"></div>
+  </header>
+
+  <section class="grid-top">
+    <div class="card" id="summaryCard">
+      <h2>오늘의 요약 <span class="sub">실시간 반영</span></h2>
+      <div class="summary-hero">
+        <span class="num" id="heroKcal">0</span>
+        <span class="unit">kcal 섭취</span>
+        <span class="net-tag" id="netTag">순 0 kcal</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="k">탄수화물</div><div class="v" id="stCarb">0<small> g</small></div></div>
+        <div class="stat"><div class="k">단백질</div><div class="v" id="stProt">0<small> g</small></div></div>
+        <div class="stat"><div class="k">지방</div><div class="v" id="stFat">0<small> g</small></div></div>
+        <div class="stat"><div class="k">단순당</div><div class="v" id="stSugar">0<small> g</small></div></div>
+        <div class="stat"><div class="k">운동 소모</div><div class="v" id="stBurn">0<small> kcal</small></div></div>
+        <div class="stat"><div class="k">수면</div><div class="v" id="stSleep">–<small> 시간</small></div></div>
+      </div>
+      <div class="pill-row" id="pillRow"></div>
+    </div>
+
+    <div class="card">
+      <h2>7일 추이 <span class="sub">체중 · 하루 누적 kcal</span></h2>
+      <div class="chart-legend">
+        <span><i style="background:var(--accent)"></i>체중(kg)</span>
+        <span><i style="background:var(--warn)"></i>섭취 kcal</span>
+      </div>
+      <svg class="trend" id="trendChart" viewBox="0 0 520 200"></svg>
+    </div>
+  </section>
+
+  <section class="rec-banner">
+    <div class="rec-head">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+      생활습관 추천 · 규칙 기반, 무료
+    </div>
+    <div class="rec-list" id="recList"></div>
+  </section>
+
+  <section class="card" id="morningCard">
+    <div class="section-head"><h2 style="margin:0;">아침 체크</h2></div>
+    <div class="check-row">
+      <input type="checkbox" id="skipMeasure">
+      <label for="skipMeasure" style="margin:0;">오늘은 측정 안 함</label>
+    </div>
+    <div class="field-row" id="morningFields">
+      <div>
+        <label for="weight">체중 (kg)</label>
+        <input type="number" id="weight" placeholder="예: 58.4" step="0.1">
+      </div>
+      <div>
+        <label for="waist">허리둘레 (cm)</label>
+        <input type="number" id="waist" placeholder="예: 71" step="0.1">
+      </div>
+      <div>
+        <label for="thigh">허벅지둘레 (cm)</label>
+        <input type="number" id="thigh" placeholder="예: 54" step="0.1">
+      </div>
+      <div>
+        <label for="hip">골반둘레 (cm)</label>
+        <input type="number" id="hip" placeholder="예: 92" step="0.1">
+      </div>
+    </div>
+    <p class="search-hint">체중은 운동 소모 칼로리 계산에도 사용돼요. 입력하지 않으면 기본값 60kg로 추정합니다.</p>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>식사</h2>
+      <span class="sub">끼니마다 바로 검색·즐겨찾기·직접입력으로 추가하세요</span>
+    </div>
+    <div class="meal-grid" id="mealGrid"></div>
+    <div class="day-total">
+      <div><div class="label">하루 누적 섭취</div><div class="value" id="dayTotalKcal">0 kcal</div></div>
+      <div class="macros">
+        <span>탄 <b id="dayCarb">0</b>g</span>
+        <span>단 <b id="dayProt">0</b>g</span>
+        <span>지 <b id="dayFat">0</b>g</span>
+        <span>당 <b id="daySugar">0</b>g</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="exerciseCard">
+    <div class="section-head"><h2 style="margin:0;">운동</h2></div>
+    <div class="field-row">
+      <div>
+        <label for="exSelect">운동 종류</label>
+        <select id="exSelect"></select>
+      </div>
+      <div>
+        <label for="exMinutes">시간 (분)</label>
+        <input type="number" id="exMinutes" value="30" min="1">
+      </div>
+    </div>
+    <p class="search-hint" style="margin-bottom:14px;">추정식: MET × 3.5 × 체중(kg) ÷ 200 × 시간(분)</p>
+    <button class="btn" id="addExBtn">추가 · 소모 칼로리 자동추정</button>
+    <div class="exercise-list" id="exerciseList"></div>
+  </section>
+
+  <section class="card" id="etcCard">
+    <div class="section-head"><h2 style="margin:0;">수면 · 배변 · 특이사항</h2></div>
+    <div class="field-row" style="grid-template-columns: 1fr; margin-bottom:16px;">
+      <div>
+        <label for="sleepInput">수면시간 (시간)</label>
+        <input type="number" id="sleepInput" step="0.5" min="0" max="14" placeholder="예: 6.5">
+      </div>
+    </div>
+
+    <label>배변 여부</label>
+    <div class="bowel-toggle" style="margin-bottom:18px;">
+      <button id="bowelYes" type="button">배변함</button>
+      <button id="bowelNo" type="button">배변 안 함</button>
+    </div>
+
+    <label>특이사항 태그</label>
+    <div class="chip-row" id="tagRow"></div>
+
+    <label for="noteInput">자유 메모</label>
+    <textarea id="noteInput" placeholder="오늘의 컨디션, 생리주기, 특별한 일정 등을 자유롭게 적어보세요."></textarea>
+  </section>
+
+  <p class="proto-note">지금은 로컬(이 브라우저)에만 저장되는 단계예요. 새로고침해도 오늘 입력은 유지됩니다. Google Sheets·외부 식품 API 연동은 다음 단계에서 붙일 예정입니다.</p>
+</div>
+
+<script>
+(function () {
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  // ---------- date ----------
+  const today = new Date();
+  const todayISO = today.toISOString().slice(0,10);
+  const STORAGE_KEY = 'dietTracker:' + todayISO;
+  $('#todayDate').textContent = today.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+
+  // ---------- data ----------
+  // type:'weight' → baseAmount는 g/ml 기준량, type:'count' → baseAmount는 항상 1(단위: 개/공기/인분 등)
+  const FOOD_DB = [
+    { label:'현미밥', type:'count', unitLabel:'공기', baseAmount:1, carb:73, prot:5, fat:2, sugar:0, kcal:332 },
+    { label:'흰쌀밥', type:'count', unitLabel:'공기', baseAmount:1, carb:69, prot:5, fat:1, sugar:0, kcal:310 },
+    { label:'잡곡밥', type:'count', unitLabel:'공기', baseAmount:1, carb:70, prot:6, fat:2, sugar:1, kcal:320 },
+    { label:'오트밀', type:'weight', unitLabel:'g', baseAmount:40, carb:27, prot:5, fat:3, sugar:1, kcal:150 },
+    { label:'고구마(찐)', type:'weight', unitLabel:'g', baseAmount:200, carb:40, prot:2, fat:0.2, sugar:12, kcal:172 },
+    { label:'감자(삶은)', type:'weight', unitLabel:'g', baseAmount:200, carb:34, prot:4, fat:0.2, sugar:2, kcal:154 },
+    { label:'닭가슴살(구운)', type:'weight', unitLabel:'g', baseAmount:100, carb:0, prot:31, fat:4, sugar:0, kcal:165 },
+    { label:'계란후라이', type:'count', unitLabel:'개', baseAmount:1, carb:0.5, prot:6, fat:5, sugar:0, kcal:90 },
+    { label:'삶은계란', type:'count', unitLabel:'개', baseAmount:1, carb:1, prot:6, fat:5, sugar:0.5, kcal:78 },
+    { label:'두부', type:'weight', unitLabel:'g', baseAmount:100, carb:2, prot:8, fat:4, sugar:1, kcal:84 },
+    { label:'삼겹살(구이)', type:'weight', unitLabel:'g', baseAmount:100, carb:0, prot:17, fat:30, sugar:0, kcal:331 },
+    { label:'소고기 등심(구이)', type:'weight', unitLabel:'g', baseAmount:100, carb:0, prot:26, fat:18, sugar:0, kcal:273 },
+    { label:'연어(구이)', type:'weight', unitLabel:'g', baseAmount:100, carb:0, prot:22, fat:13, sugar:0, kcal:208 },
+    { label:'새우(데침)', type:'weight', unitLabel:'g', baseAmount:100, carb:1, prot:20, fat:1, sugar:0, kcal:99 },
+    { label:'그릭요거트', type:'weight', unitLabel:'g', baseAmount:100, carb:4, prot:10, fat:0.4, sugar:4, kcal:73 },
+    { label:'우유', type:'weight', unitLabel:'ml', baseAmount:200, carb:10, prot:7, fat:7, sugar:10, kcal:125 },
+    { label:'샐러드(드레싱포함)', type:'count', unitLabel:'인분', baseAmount:1, carb:15, prot:4, fat:10, sugar:8, kcal:170 },
+    { label:'방울토마토', type:'weight', unitLabel:'g', baseAmount:100, carb:4, prot:1, fat:0.2, sugar:3, kcal:20 },
+    { label:'오이', type:'count', unitLabel:'개', baseAmount:1, carb:3, prot:1, fat:0.1, sugar:2, kcal:15 },
+    { label:'바나나', type:'count', unitLabel:'개', baseAmount:1, carb:27, prot:1.3, fat:0.4, sugar:14, kcal:105 },
+    { label:'사과', type:'count', unitLabel:'개', baseAmount:1, carb:25, prot:0.5, fat:0.3, sugar:19, kcal:95 },
+    { label:'블루베리', type:'weight', unitLabel:'g', baseAmount:100, carb:14, prot:0.7, fat:0.3, sugar:10, kcal:57 },
+    { label:'김치찌개', type:'count', unitLabel:'인분', baseAmount:1, carb:10, prot:15, fat:12, sugar:3, kcal:220 },
+    { label:'된장찌개', type:'count', unitLabel:'인분', baseAmount:1, carb:12, prot:11, fat:7, sugar:3, kcal:160 },
+    { label:'순두부찌개', type:'count', unitLabel:'인분', baseAmount:1, carb:8, prot:13, fat:9, sugar:2, kcal:180 },
+    { label:'비빔밥', type:'count', unitLabel:'그릇', baseAmount:1, carb:85, prot:15, fat:12, sugar:5, kcal:550 },
+    { label:'김밥', type:'count', unitLabel:'줄', baseAmount:1, carb:45, prot:8, fat:9, sugar:3, kcal:320 },
+    { label:'불고기', type:'count', unitLabel:'인분', baseAmount:1, carb:15, prot:25, fat:15, sugar:10, kcal:310 },
+    { label:'잔치국수', type:'count', unitLabel:'그릇', baseAmount:1, carb:60, prot:10, fat:5, sugar:3, kcal:320 },
+    { label:'짜장면', type:'count', unitLabel:'그릇', baseAmount:1, carb:90, prot:15, fat:20, sugar:8, kcal:700 },
+    { label:'라면(조리)', type:'count', unitLabel:'개', baseAmount:1, carb:78, prot:10, fat:16, sugar:3, kcal:500 },
+    { label:'식빵', type:'count', unitLabel:'장', baseAmount:1, carb:15, prot:3, fat:1, sugar:2, kcal:85 },
+    { label:'크로와상', type:'count', unitLabel:'개', baseAmount:1, carb:26, prot:5, fat:12, sugar:5, kcal:230 },
+    { label:'샌드위치', type:'count', unitLabel:'개', baseAmount:1, carb:35, prot:15, fat:14, sugar:6, kcal:330 },
+    { label:'파스타(토마토)', type:'count', unitLabel:'인분', baseAmount:1, carb:65, prot:12, fat:10, sugar:8, kcal:400 },
+    { label:'피자', type:'count', unitLabel:'조각', baseAmount:1, carb:30, prot:12, fat:11, sugar:4, kcal:280 },
+    { label:'아메리카노', type:'count', unitLabel:'잔', baseAmount:1, carb:0, prot:0, fat:0, sugar:0, kcal:9 },
+    { label:'카페라떼', type:'count', unitLabel:'잔', baseAmount:1, carb:10, prot:6, fat:6, sugar:9, kcal:130 },
+    { label:'탄산음료', type:'count', unitLabel:'캔', baseAmount:1, carb:27, prot:0, fat:0, sugar:27, kcal:105 },
+    { label:'두유', type:'weight', unitLabel:'ml', baseAmount:200, carb:11, prot:7, fat:4, sugar:7, kcal:110 },
+    { label:'아이스크림', type:'count', unitLabel:'컵', baseAmount:1, carb:24, prot:4, fat:11, sugar:22, kcal:207 },
+    { label:'초콜릿', type:'weight', unitLabel:'g', baseAmount:30, carb:18, prot:2, fat:9, sugar:16, kcal:165 },
+    { label:'견과류', type:'weight', unitLabel:'g', baseAmount:30, carb:6, prot:6, fat:15, sugar:1, kcal:180 },
+    { label:'프로틴바', type:'count', unitLabel:'개', baseAmount:1, carb:20, prot:15, fat:7, sugar:5, kcal:210 },
+    { label:'감자칩', type:'weight', unitLabel:'g', baseAmount:50, carb:28, prot:2, fat:14, sugar:1, kcal:260 },
+  ];
+  const FAVORITES = ['현미밥','닭가슴살(구운)','계란후라이','그릭요거트','두부'];
+  const MEALS = ['아침','점심','간식','저녁'];
+
+  function foodDisplayBase(food) {
+    return `${food.label} ${food.baseAmount}${food.unitLabel}`;
+  }
+
+  const EXERCISES = [
+    { name:'걷기 (보통)', met:3.5 },
+    { name:'빠르게 걷기', met:4.3 },
+    { name:'러닝 (조깅)', met:7.0 },
+    { name:'러닝 (빠르게)', met:9.8 },
+    { name:'자전거', met:6.8 },
+    { name:'수영', met:6.0 },
+    { name:'웨이트 트레이닝', met:5.0 },
+    { name:'요가', met:2.5 },
+    { name:'필라테스', met:3.0 },
+    { name:'계단 오르기', met:8.8 },
+    { name:'고강도 홈트', met:8.0 },
+    { name:'등산', met:6.5 },
+  ];
+
+  const TAGS = ['두통','소화불량','피로','스트레스','생리주기','컨디션좋음'];
+
+  const HISTORY = [
+    { day:'8/17', weight:59.4, kcal:1980 },
+    { day:'8/18', weight:59.2, kcal:2150 },
+    { day:'8/19', weight:59.1, kcal:1870 },
+    { day:'8/20', weight:58.9, kcal:2400 },
+    { day:'8/21', weight:58.8, kcal:1760 },
+    { day:'8/22', weight:58.6, kcal:2020 },
+  ];
+
+  // ---------- state ----------
+  const state = {
+    skipMeasure: false,
+    weight: null, waist: null, thigh: null, hip: null,
+    meals: { 아침: [], 점심: [], 간식: [], 저녁: [] },
+    exercises: [],
+    sleep: null,
+    bowel: null,
+    tags: [],
+    note: '',
+  };
+
+  // 오늘 날짜로 이미 저장된 기록이 있으면 복원 (브라우저 로컬 저장 · 새로고침 대비)
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) Object.assign(state, JSON.parse(saved));
+  } catch (e) { /* localStorage 사용 불가 시 조용히 무시 */ }
+
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function round1(n) { return Math.round(n * 10) / 10; }
+  function sumMacros(items) {
+    return items.reduce((a, it) => ({
+      carb: round1(a.carb + it.carb), prot: round1(a.prot + it.prot),
+      fat: round1(a.fat + it.fat), sugar: round1(a.sugar + it.sugar),
+      kcal: a.kcal + it.kcal,
+    }), { carb:0, prot:0, fat:0, sugar:0, kcal:0 });
+  }
+
+  // ---------- morning ----------
+  $('#skipMeasure').checked = state.skipMeasure;
+  $('#skipMeasure').addEventListener('change', (e) => {
+    state.skipMeasure = e.target.checked;
+    $('#morningFields').style.opacity = state.skipMeasure ? 0.45 : 1;
+    $$('#morningFields input').forEach(i => i.disabled = state.skipMeasure);
+    render();
+  });
+  ['weight','waist','thigh','hip'].forEach(id => {
+    const input = $('#' + id);
+    if (state[id] !== null) input.value = state[id];
+    input.addEventListener('input', (e) => {
+      state[id] = e.target.value === '' ? null : parseFloat(e.target.value);
+      render();
+    });
+  });
+  if (state.skipMeasure) {
+    $('#morningFields').style.opacity = 0.45;
+    $$('#morningFields input').forEach(i => i.disabled = true);
+  }
+
+  // ---------- meal cards (all visible at once) ----------
+  const mealGrid = $('#mealGrid');
+  MEALS.forEach(meal => {
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.dataset.meal = meal;
+    card.innerHTML = `
+      <div class="meal-card-head">
+        <h3>${meal}</h3>
+        <span class="meal-subtotal" data-role="subtotal">0 kcal</span>
+      </div>
+      <div class="search-box">
+        <label>음식 검색 (외부 API 자동조회 · 프로토타입 샘플 ${FOOD_DB.length}종)</label>
+        <input type="text" class="food-search" placeholder="예: 닭가슴살, 현미밥, 라면…" autocomplete="off">
+        <div class="search-results" style="display:none;"></div>
+      </div>
+      <div class="chip-row fav-row"></div>
+      <div class="pending-add" style="display:none;">
+        <span class="pending-label"></span>
+        <input type="number" class="pending-qty" min="0.1">
+        <span class="pending-unit"></span>
+        <button type="button" class="btn small confirm-add-btn">추가</button>
+        <button type="button" class="btn small subtle cancel-add-btn">취소</button>
+      </div>
+      <details class="manual-add-toggle">
+        <summary>직접 입력으로 추가</summary>
+        <div class="manual-form">
+          <input type="text" class="m-name" placeholder="음식 이름">
+          <div class="manual-grid">
+            <input type="number" class="m-carb" placeholder="탄(g)" min="0">
+            <input type="number" class="m-prot" placeholder="단(g)" min="0">
+            <input type="number" class="m-fat" placeholder="지(g)" min="0">
+            <input type="number" class="m-sugar" placeholder="당(g)" min="0">
+          </div>
+          <button type="button" class="btn small add-manual-btn">이 끼니에 추가 (kcal 자동계산)</button>
+        </div>
+      </details>
+      <table class="food-table"><tbody class="items-body"></tbody></table>
+    `;
+    const favRow = card.querySelector('.fav-row');
+    FAVORITES.forEach(label => {
+      const food = FOOD_DB.find(f => f.label === label);
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.dataset.food = label;
+      chip.textContent = '+ ' + foodDisplayBase(food);
+      favRow.appendChild(chip);
+    });
+    mealGrid.appendChild(card);
+  });
+
+  function addScaledFoodToMeal(meal, food, qty) {
+    const scale = qty / food.baseAmount;
+    state.meals[meal].push({
+      name: `${food.label} ${qty}${food.unitLabel}`,
+      carb: round1(food.carb * scale), prot: round1(food.prot * scale),
+      fat: round1(food.fat * scale), sugar: round1(food.sugar * scale),
+      kcal: Math.round(food.kcal * scale),
+    });
+    render();
+  }
+
+  function openPendingAdd(cardEl, food) {
+    cardEl.pendingFood = food;
+    const pending = cardEl.querySelector('.pending-add');
+    pending.style.display = 'flex';
+    pending.querySelector('.pending-label').textContent = food.label;
+    pending.querySelector('.pending-unit').textContent = food.unitLabel;
+    const qtyInput = pending.querySelector('.pending-qty');
+    qtyInput.value = food.baseAmount;
+    qtyInput.step = food.type === 'weight' ? 10 : 1;
+    cardEl.querySelector('.search-results').style.display = 'none';
+  }
+
+  // favorite chip / search result / pending-add / manual-add / remove clicks
+  mealGrid.addEventListener('click', (e) => {
+    const favBtn = e.target.closest('.fav-row .chip');
+    if (favBtn) {
+      const cardEl = favBtn.closest('.meal-card');
+      const food = FOOD_DB.find(f => f.label === favBtn.dataset.food);
+      if (food) openPendingAdd(cardEl, food);
+      return;
+    }
+    const resultBtn = e.target.closest('.search-results button[data-food]');
+    if (resultBtn) {
+      const cardEl = resultBtn.closest('.meal-card');
+      const food = FOOD_DB.find(f => f.label === resultBtn.dataset.food);
+      if (food) openPendingAdd(cardEl, food);
+      cardEl.querySelector('.food-search').value = '';
+      return;
+    }
+    const confirmBtn = e.target.closest('.confirm-add-btn');
+    if (confirmBtn) {
+      const cardEl = confirmBtn.closest('.meal-card');
+      const meal = cardEl.dataset.meal;
+      const food = cardEl.pendingFood;
+      const qty = parseFloat(cardEl.querySelector('.pending-qty').value);
+      if (food && qty > 0) addScaledFoodToMeal(meal, food, qty);
+      cardEl.querySelector('.pending-add').style.display = 'none';
+      return;
+    }
+    const cancelBtn = e.target.closest('.cancel-add-btn');
+    if (cancelBtn) {
+      cancelBtn.closest('.meal-card').querySelector('.pending-add').style.display = 'none';
+      return;
+    }
+    const manualBtn = e.target.closest('.add-manual-btn');
+    if (manualBtn) {
+      const cardEl = manualBtn.closest('.meal-card');
+      const meal = cardEl.dataset.meal;
+      const name = cardEl.querySelector('.m-name').value.trim();
+      const carb = parseFloat(cardEl.querySelector('.m-carb').value) || 0;
+      const prot = parseFloat(cardEl.querySelector('.m-prot').value) || 0;
+      const fat = parseFloat(cardEl.querySelector('.m-fat').value) || 0;
+      const sugar = parseFloat(cardEl.querySelector('.m-sugar').value) || 0;
+      if (!name) { cardEl.querySelector('.m-name').focus(); return; }
+      const kcal = Math.round(carb * 4 + prot * 4 + fat * 9);
+      state.meals[meal].push({ name, carb, prot, fat, sugar, kcal });
+      cardEl.querySelector('.m-name').value = '';
+      ['.m-carb','.m-prot','.m-fat','.m-sugar'].forEach(sel => cardEl.querySelector(sel).value = '');
+      render();
+      return;
+    }
+    const rmBtn = e.target.closest('td.rm button');
+    if (rmBtn) {
+      const meal = rmBtn.closest('.meal-card').dataset.meal;
+      state.meals[meal].splice(parseInt(rmBtn.dataset.idx), 1);
+      render();
+      return;
+    }
+  });
+
+  // search input (mock external API autocomplete), scoped per card
+  mealGrid.addEventListener('input', (e) => {
+    if (!e.target.classList.contains('food-search')) return;
+    const cardEl = e.target.closest('.meal-card');
+    const resultsEl = cardEl.querySelector('.search-results');
+    const q = e.target.value.trim();
+    if (!q) { resultsEl.style.display = 'none'; return; }
+    const matches = FOOD_DB.filter(f => f.label.includes(q));
+    if (!matches.length) {
+      resultsEl.innerHTML = '<div class="empty-row">검색 결과 없음 — 직접 입력을 이용해보세요</div>';
+    } else {
+      resultsEl.innerHTML = matches.map(f =>
+        `<button type="button" data-food="${f.label}"><span>${foodDisplayBase(f)}</span><span class="macro">${f.kcal}kcal · 탄${f.carb} 단${f.prot} 지${f.fat}</span></button>`
+      ).join('');
+    }
+    resultsEl.style.display = 'block';
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-box')) {
+      $$('.search-results').forEach(el => el.style.display = 'none');
+    }
+  });
+
+  function renderMealCards() {
+    MEALS.forEach(meal => {
+      const cardEl = mealGrid.querySelector(`.meal-card[data-meal="${meal}"]`);
+      const items = state.meals[meal];
+      const body = cardEl.querySelector('.items-body');
+      body.innerHTML = items.length
+        ? items.map((it, idx) => `
+            <tr>
+              <td class="name">${it.name}</td>
+              <td>${it.kcal}kcal</td>
+              <td class="rm"><button type="button" data-idx="${idx}" aria-label="삭제">×</button></td>
+            </tr>`).join('')
+        : '<tr><td class="empty-row" colspan="3">아직 추가된 음식이 없어요</td></tr>';
+      const sub = sumMacros(items);
+      cardEl.querySelector('[data-role="subtotal"]').textContent = sub.kcal + ' kcal';
+    });
+  }
+
+  // ---------- exercise ----------
+  const exSelect = $('#exSelect');
+  EXERCISES.forEach(ex => {
+    const o = document.createElement('option');
+    o.value = ex.met; o.textContent = `${ex.name} (MET ${ex.met})`;
+    o.dataset.name = ex.name;
+    exSelect.appendChild(o);
+  });
+  $('#addExBtn').addEventListener('click', () => {
+    const met = parseFloat(exSelect.value);
+    const name = exSelect.selectedOptions[0].dataset.name;
+    const minutes = parseFloat($('#exMinutes').value) || 0;
+    if (minutes <= 0) return;
+    const weight = state.weight || 60;
+    const kcal = Math.round((met * 3.5 * weight / 200) * minutes);
+    state.exercises.push({ name, minutes, kcal });
+    render();
+  });
+  function renderExercise() {
+    const list = $('#exerciseList');
+    list.innerHTML = '';
+    if (!state.exercises.length) {
+      list.innerHTML = '<div class="empty-row">오늘 기록된 운동이 없어요</div>';
+      return;
+    }
+    state.exercises.forEach((ex, idx) => {
+      const row = document.createElement('div');
+      row.className = 'exercise-item';
+      row.innerHTML = `<span>${ex.name} · ${ex.minutes}분</span><span class="kcal">-${ex.kcal} kcal</span>
+        <button type="button" class="btn small subtle" data-idx="${idx}">삭제</button>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('button[data-idx]').forEach(b => {
+      b.addEventListener('click', () => { state.exercises.splice(parseInt(b.dataset.idx), 1); render(); });
+    });
+  }
+
+  // ---------- etc: sleep / bowel / tags ----------
+  if (state.sleep !== null) $('#sleepInput').value = state.sleep;
+  $('#sleepInput').addEventListener('input', (e) => {
+    state.sleep = e.target.value === '' ? null : parseFloat(e.target.value);
+    render();
+  });
+  $('#bowelYes').addEventListener('click', () => { state.bowel = true; render(); });
+  $('#bowelNo').addEventListener('click', () => { state.bowel = false; render(); });
+  function renderBowel() {
+    $('#bowelYes').classList.toggle('on', state.bowel === true);
+    $('#bowelNo').classList.toggle('on', state.bowel === false);
+  }
+
+  const tagRow = $('#tagRow');
+  TAGS.forEach(tag => {
+    const chip = document.createElement('button');
+    chip.type = 'button'; chip.className = 'chip'; chip.textContent = tag;
+    if (state.tags.includes(tag)) chip.classList.add('tag-selected');
+    chip.addEventListener('click', () => {
+      const i = state.tags.indexOf(tag);
+      if (i === -1) state.tags.push(tag); else state.tags.splice(i, 1);
+      chip.classList.toggle('tag-selected');
+      render();
+    });
+    tagRow.appendChild(chip);
+  });
+  $('#noteInput').value = state.note || '';
+  $('#noteInput').addEventListener('input', (e) => { state.note = e.target.value; saveState(); });
+
+  // ---------- recommendation rules ----------
+  function computeRecommendations(day, burn, netKcal) {
+    const recs = [];
+    if (state.sleep !== null && state.sleep < 6) {
+      recs.push('수면이 부족해요 (' + state.sleep + '시간). 오늘은 평소보다 조금 일찍 잠자리에 들어보는 건 어떨까요?');
+    }
+    if (day.sugar > 50) {
+      recs.push('단순당 섭취가 ' + day.sugar + 'g으로 많은 편이에요. 다음 끼니는 당 함량이 낮은 음식으로 균형을 맞춰보세요.');
+    }
+    if (state.bowel === false) {
+      recs.push('오늘 배변 활동이 없었어요. 수분과 식이섬유 섭취를 조금 늘려보세요.');
+    }
+    if (state.exercises.length === 0) {
+      recs.push('아직 움직인 기록이 없어요. 짧은 산책이라도 시도해보면 좋아요.');
+    }
+    if (day.kcal > 0 && netKcal > 2200) {
+      recs.push('오늘 순 섭취 칼로리(' + netKcal + 'kcal)가 높은 편이에요. 가벼운 유산소 운동을 추가해보는 것도 방법이에요.');
+    }
+    if (state.tags.includes('피로') || state.tags.includes('스트레스')) {
+      recs.push('피로·스트레스가 누적된 것 같아요. 오늘은 강도 높은 운동보다 휴식을 우선해보세요.');
+    }
+    if (state.tags.includes('컨디션좋음') && recs.length === 0) {
+      recs.push('컨디션이 좋다고 기록하셨네요. 지금의 루틴을 오늘도 그대로 이어가 보세요.');
+    }
+    if (recs.length === 0) {
+      recs.push('아직 특별히 주의할 항목이 없어요. 오늘 하루도 기록을 이어가 보세요.');
+    }
+    return recs.slice(0, 4);
+  }
+
+  // ---------- trend chart ----------
+  function renderChart(todayWeight, todayKcal) {
+    const data = HISTORY.concat([{ day:'오늘', weight: todayWeight, kcal: todayKcal, isToday:true }]);
+    const w = 520, h = 200, padL = 34, padR = 10, padT = 10, padB = 22;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+
+    const weights = data.map(d => d.weight);
+    const kcals = data.map(d => d.kcal);
+    const wMin = Math.min(...weights) - 0.6, wMax = Math.max(...weights) + 0.6;
+    const kMin = Math.min(...kcals) - 200, kMax = Math.max(...kcals) + 200;
+
+    const x = i => padL + (plotW * i) / (data.length - 1);
+    const yW = v => padT + plotH - ((v - wMin) / (wMax - wMin)) * plotH;
+    const yK = v => padT + plotH - ((v - kMin) / (kMax - kMin)) * plotH;
+
+    let svg = '';
+    for (let i = 0; i <= 3; i++) {
+      const gy = padT + (plotH * i) / 3;
+      svg += `<line class="grid-line" x1="${padL}" y1="${gy}" x2="${w-padR}" y2="${gy}" />`;
+    }
+
+    const weightPath = data.map((d,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${yW(d.weight).toFixed(1)}`).join(' ');
+    const kcalPath = data.map((d,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${yK(d.kcal).toFixed(1)}`).join(' ');
+    svg += `<path class="line-weight" d="${weightPath}" />`;
+    svg += `<path class="line-kcal" d="${kcalPath}" />`;
+
+    data.forEach((d,i) => {
+      const todayCls = d.isToday ? ' dot-today' : '';
+      svg += `<circle class="dot-weight${todayCls}" cx="${x(i).toFixed(1)}" cy="${yW(d.weight).toFixed(1)}" r="${d.isToday?4.5:3}" />`;
+      svg += `<circle class="dot-kcal${todayCls}" cx="${x(i).toFixed(1)}" cy="${yK(d.kcal).toFixed(1)}" r="${d.isToday?4.5:3}" />`;
+      svg += `<text class="axis-label" x="${x(i).toFixed(1)}" y="${h-4}" text-anchor="middle">${d.day}</text>`;
+    });
+
+    $('#trendChart').innerHTML = svg;
+  }
+
+  // ---------- master render ----------
+  function render() {
+    renderMealCards();
+    renderExercise();
+    renderBowel();
+
+    const day = Object.values(state.meals).reduce((acc, items) => {
+      const s = sumMacros(items);
+      return { carb: round1(acc.carb+s.carb), prot: round1(acc.prot+s.prot), fat: round1(acc.fat+s.fat), sugar: round1(acc.sugar+s.sugar), kcal: acc.kcal+s.kcal };
+    }, { carb:0, prot:0, fat:0, sugar:0, kcal:0 });
+
+    const burn = state.exercises.reduce((a,e) => a + e.kcal, 0);
+    const net = day.kcal - burn;
+
+    $('#heroKcal').textContent = day.kcal;
+    $('#netTag').textContent = `순 ${net} kcal`;
+    $('#stCarb').innerHTML = day.carb + '<small> g</small>';
+    $('#stProt').innerHTML = day.prot + '<small> g</small>';
+    $('#stFat').innerHTML = day.fat + '<small> g</small>';
+    $('#stSugar').innerHTML = day.sugar + '<small> g</small>';
+    $('#stBurn').innerHTML = burn + '<small> kcal</small>';
+    $('#stSleep').innerHTML = (state.sleep ?? '–') + '<small> 시간</small>';
+
+    $('#dayTotalKcal').textContent = day.kcal + ' kcal';
+    $('#dayCarb').textContent = day.carb;
+    $('#dayProt').textContent = day.prot;
+    $('#dayFat').textContent = day.fat;
+    $('#daySugar').textContent = day.sugar;
+
+    const pills = [];
+    if (state.skipMeasure) pills.push(['neutral','오늘 측정 건너뜀']);
+    else if (state.weight) pills.push(['good', `체중 ${state.weight}kg 기록됨`]);
+    pills.push(state.bowel === true ? ['good','배변 기록됨'] : state.bowel === false ? ['warn','배변 없음'] : ['neutral','배변 미입력']);
+    pills.push(state.sleep !== null && state.sleep < 6 ? ['bad', `수면 ${state.sleep}h · 부족`] : state.sleep !== null ? ['good', `수면 ${state.sleep}h`] : ['neutral','수면 미입력']);
+    $('#pillRow').innerHTML = pills.map(([tone,label]) => `<span class="pill ${tone}"><span class="dot" style="background:currentColor"></span>${label}</span>`).join('');
+
+    $('#recList').innerHTML = computeRecommendations(day, burn, net)
+      .map(r => `<div class="rec-item">${r}</div>`).join('');
+
+    renderChart(state.weight || HISTORY[HISTORY.length-1].weight, day.kcal || HISTORY[HISTORY.length-1].kcal);
+
+    saveState();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
