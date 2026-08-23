@@ -28,12 +28,27 @@ function jsonOutput_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+function formatDate_(v) {
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(v);
+}
+
 function rowToObject_(r) {
   return {
-    date: r[0], weight: r[1], waist: r[2], thigh: r[3], hip: r[4], skipMeasure: r[5],
+    date: formatDate_(r[0]), weight: r[1], waist: r[2], thigh: r[3], hip: r[4], skipMeasure: r[5],
     kcal: r[6], carb: r[7], prot: r[8], fat: r[9], sugar: r[10], burn: r[11], net: r[12],
     sleep: r[13], bowel: r[14], tags: r[15], note: r[16], schedule: r[19]
   };
+}
+
+// 날짜 칸은 항상 텍스트로 고정해서 저장 (구글시트가 자동으로 '진짜 날짜'로 바꿔버리는 것 방지)
+function writeRow_(sheet, rowIndex, row) {
+  sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(row[0]);
+  if (row.length > 1) {
+    sheet.getRange(rowIndex, 2, 1, row.length - 1).setValues([row.slice(1)]);
+  }
 }
 
 // 히스토리 조회: GET {웹앱주소}?token=...&days=30
@@ -60,7 +75,7 @@ function doPost(e) {
     var data = sheet.getDataRange().getValues();
     var rowIndex = -1;
     for (var i = 1; i < data.length; i++) {
-      if (data[i][0] === payload.date) { rowIndex = i + 1; break; }
+      if (formatDate_(data[i][0]) === payload.date) { rowIndex = i + 1; break; }
     }
     var row = [
       payload.date,
@@ -85,10 +100,9 @@ function doPost(e) {
       payload.schedule || ''
     ];
     if (rowIndex === -1) {
-      sheet.appendRow(row);
-    } else {
-      sheet.getRange(rowIndex, 1, 1, row.length).setValues([row]);
+      rowIndex = sheet.getLastRow() + 1;
     }
+    writeRow_(sheet, rowIndex, row);
     return jsonOutput_({ ok: true });
   } catch (err) {
     return jsonOutput_({ ok: false, error: String(err) });
