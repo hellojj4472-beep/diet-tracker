@@ -67,12 +67,31 @@ function doGet(e) {
   }
 }
 
+// 일정 칸 하나만 업데이트 (그 날의 다른 기록은 건드리지 않음)
+function setScheduleOnly_(sheet, payload) {
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (formatDate_(data[i][0]) === payload.date) { rowIndex = i + 1; break; }
+  }
+  if (rowIndex === -1) {
+    rowIndex = sheet.getLastRow() + 1;
+    sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
+  }
+  var scheduleCol = HEADERS.length; // 일정은 마지막 칸
+  sheet.getRange(rowIndex, scheduleCol).setValue(payload.schedule || '');
+  return { ok: true };
+}
+
 // 오늘 기록 저장/갱신: POST JSON body { token, date, weight, ... }
 function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
     checkToken_(payload.token);
     var sheet = getSheet_();
+    if (payload.action === 'schedule') {
+      return jsonOutput_(setScheduleOnly_(sheet, payload));
+    }
     var data = sheet.getDataRange().getValues();
     var rowIndex = -1;
     for (var i = 1; i < data.length; i++) {
