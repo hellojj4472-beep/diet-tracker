@@ -453,25 +453,13 @@
       <summary>🔁 반복 일정 관리</summary>
       <div class="recurring-body">
         <div class="recurring-add-row">
-          <span class="recurring-label">매주</span>
-          <select id="recurWeeklyDow">
-            <option value="0">일요일</option>
-            <option value="1">월요일</option>
-            <option value="2">화요일</option>
-            <option value="3">수요일</option>
-            <option value="4">목요일</option>
-            <option value="5">금요일</option>
-            <option value="6">토요일</option>
+          <select id="recurType">
+            <option value="weekly">매주</option>
+            <option value="monthly">매달</option>
           </select>
-          <input type="text" id="recurWeeklyText" placeholder="예: 요가 수업">
-          <button type="button" class="btn small" id="recurWeeklyAddBtn">추가</button>
-        </div>
-        <div class="recurring-add-row">
-          <span class="recurring-label">매달</span>
-          <select id="recurMonthlyDay"></select>
-          <span class="recurring-label" style="margin:0;">일</span>
-          <input type="text" id="recurMonthlyText" placeholder="예: 병원 예약">
-          <button type="button" class="btn small" id="recurMonthlyAddBtn">추가</button>
+          <select id="recurValue"></select>
+          <input type="text" id="recurText" placeholder="예: 요가 수업">
+          <button type="button" class="btn small" id="recurAddBtn">추가</button>
         </div>
         <div class="recurring-list" id="recurringList"></div>
       </div>
@@ -1196,23 +1184,33 @@
       return `<div class="recurring-item"><span>${label} · ${escAttr_(r.text)}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
     }).join('');
   }
-  for (let i = 1; i <= 31; i++) {
-    const o = document.createElement('option'); o.value = i; o.textContent = i;
-    $('#recurMonthlyDay').appendChild(o);
+  function populateRecurValueOptions_() {
+    const type = $('#recurType').value;
+    const sel = $('#recurValue');
+    sel.innerHTML = '';
+    if (type === 'weekly') {
+      DOW_NAMES.forEach((name, i) => {
+        const o = document.createElement('option'); o.value = i; o.textContent = name + '요일';
+        sel.appendChild(o);
+      });
+    } else {
+      for (let i = 1; i <= 31; i++) {
+        const o = document.createElement('option'); o.value = i; o.textContent = i + '일';
+        sel.appendChild(o);
+      }
+    }
   }
-  $('#recurWeeklyAddBtn').addEventListener('click', () => {
-    const text = $('#recurWeeklyText').value.trim();
+  $('#recurType').addEventListener('change', populateRecurValueOptions_);
+  populateRecurValueOptions_();
+
+  $('#recurAddBtn').addEventListener('click', () => {
+    const text = $('#recurText').value.trim();
     if (!text) return;
-    recurringSchedules.push({ type: 'weekly', dow: parseInt($('#recurWeeklyDow').value), text });
+    const type = $('#recurType').value;
+    const value = parseInt($('#recurValue').value);
+    recurringSchedules.push(type === 'weekly' ? { type, dow: value, text } : { type, day: value, text });
     saveRecurring_(); renderRecurringList(); renderCalendar();
-    $('#recurWeeklyText').value = '';
-  });
-  $('#recurMonthlyAddBtn').addEventListener('click', () => {
-    const text = $('#recurMonthlyText').value.trim();
-    if (!text) return;
-    recurringSchedules.push({ type: 'monthly', day: parseInt($('#recurMonthlyDay').value), text });
-    saveRecurring_(); renderRecurringList(); renderCalendar();
-    $('#recurMonthlyText').value = '';
+    $('#recurText').value = '';
   });
   $('#recurringList').addEventListener('click', (e) => {
     const btn = e.target.closest('.recurring-del');
