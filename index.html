@@ -138,16 +138,6 @@
   .section-head h2 { font-size: 18px; margin: 0; }
   .section-head .sub { font-family: 'Gowun Dodum', sans-serif; font-weight: 400; font-size: 12px; color: var(--ink-faint); }
 
-  /* ---------- layout ---------- */
-  .grid-top {
-    display: grid;
-    grid-template-columns: 1.05fr 1.3fr;
-    gap: 18px;
-  }
-  @media (max-width: 760px) {
-    .grid-top { grid-template-columns: 1fr; }
-  }
-
   .card {
     background: var(--paper-raised);
     border: 1px solid var(--line);
@@ -163,45 +153,6 @@
     justify-content: space-between;
   }
   .card h2 .sub { font-family: 'Gowun Dodum', sans-serif; font-weight: 400; font-size: 12px; color: var(--ink-faint); }
-
-  /* ---------- summary card ---------- */
-  .summary-hero {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .summary-hero .num {
-    font-family: 'Gowun Batang', serif;
-    font-weight: 700;
-    font-size: 40px;
-    font-variant-numeric: tabular-nums;
-    color: var(--accent-ink);
-  }
-  .summary-hero .unit { color: var(--ink-soft); font-size: 14px; }
-  .summary-hero .net-tag {
-    margin-left: auto;
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--accent-soft);
-    color: var(--accent-ink);
-    white-space: nowrap;
-  }
-
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-  .stat {
-    background: var(--paper-sunken);
-    border-radius: var(--radius-m);
-    padding: 10px 12px;
-  }
-  .stat .k { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.02em; }
-  .stat .v { font-variant-numeric: tabular-nums; font-size: 17px; margin-top: 2px; }
-  .stat .v small { font-size: 11px; color: var(--ink-faint); font-weight: 400; }
 
   .pill-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .pill {
@@ -221,32 +172,32 @@
 
   /* ---------- 월 캘린더 ---------- */
   .cal-wrap { overflow-x: auto; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; min-width: 300px; }
-  .cal-dow { text-align: center; font-size: 10.5px; color: var(--ink-faint); padding-bottom: 4px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 560px; }
+  .cal-dow { text-align: center; font-size: 11.5px; color: var(--ink-faint); padding-bottom: 6px; }
   .cal-cell {
-    min-height: 58px; border: 1px solid var(--line); border-radius: 8px;
-    padding: 4px 5px; background: var(--paper-sunken); cursor: pointer;
+    min-height: 108px; border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 7px; background: var(--paper-sunken); cursor: pointer;
+    display: flex; flex-direction: column;
   }
   .cal-cell[data-date]:hover { border-color: var(--plan); }
   .cal-cell.empty { border-color: transparent; background: transparent; cursor: default; }
   .cal-cell.today { border-color: var(--accent); background: var(--accent-soft); }
-  .cal-day-num { font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .cal-day-num { font-size: 11.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .cal-cell.today .cal-day-num { color: var(--accent-ink); font-weight: 700; }
-  .cal-weight { font-size: 12px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .cal-weight { font-size: 13px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .cal-schedule-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
   .cal-schedule-text {
-    font-size: 10px; color: var(--plan); margin-top: 2px; font-weight: 700;
+    font-size: 10.5px; color: var(--plan); font-weight: 700; line-height: 1.3;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .cal-schedule-input {
-    width: 100%; margin-top: 3px; padding: 2px 3px; font-size: 10.5px;
-    border-radius: 4px; border: 1px solid var(--plan);
-  }
-  .cal-badges { display: flex; gap: 3px; margin-top: 4px; }
+  .cal-schedule-text.recur { color: var(--ink-soft); font-weight: 400; }
+  .cal-schedule-more { font-size: 10px; color: var(--ink-faint); }
+  .cal-badges { display: flex; gap: 4px; margin-top: auto; padding-top: 4px; }
   .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
   .cal-dot.plan { background: var(--plan); }
   .cal-dot.note { background: var(--accent); }
   .cal-icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-  .cal-icon.cal-bowel { color: var(--bowel-brown); font-size: 12px; }
+  .cal-icon.cal-bowel { color: var(--bowel-brown); font-size: 13px; }
   .cal-icon.cal-exercise { color: var(--warn); }
   .cal-icon svg { display: block; }
   .cal-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin-top: 12px; flex-wrap: wrap; align-items: center; }
@@ -256,6 +207,59 @@
   .cal-legend .legend-icon { display: inline-flex; align-items: center; margin-right: 4px; }
   .cal-legend .legend-icon.bowel { color: var(--bowel-brown); font-size: 12px; }
   .cal-legend .legend-icon.exercise { color: var(--warn); }
+
+  /* ---------- 반복 일정 ---------- */
+  .recurring-toggle { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .recurring-toggle summary { cursor: pointer; font-size: 13px; color: var(--ink-soft); }
+  .recurring-body { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .recurring-add-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .recurring-add-row select { width: auto; flex-shrink: 0; }
+  .recurring-add-row input { flex: 1; min-width: 140px; }
+  .recurring-label { font-size: 13px; color: var(--ink-soft); flex-shrink: 0; }
+  .recurring-list { display: flex; flex-direction: column; gap: 6px; }
+  .recurring-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 8px 10px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13px;
+  }
+  .recurring-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 15px; line-height: 1; }
+  .recurring-del:hover { color: var(--bad); }
+
+  /* ---------- 오늘의 요약 (가로 한 줄) ---------- */
+  .summary-row-wrap { overflow-x: auto; }
+  .summary-row { display: flex; gap: 10px; align-items: stretch; min-width: max-content; padding-bottom: 4px; }
+  .sum-item {
+    background: var(--paper-sunken); border-radius: var(--radius-m); padding: 10px 14px;
+    display: flex; flex-direction: column; justify-content: center; min-width: 84px;
+  }
+  .sum-item .k { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+  .sum-item .v { font-variant-numeric: tabular-nums; font-size: 16px; margin-top: 2px; white-space: nowrap; }
+  .sum-item .v small { font-size: 11px; color: var(--ink-faint); font-weight: 400; }
+  .sum-kcal { background: var(--accent-soft); flex-direction: row; align-items: baseline; gap: 6px; }
+  .sum-kcal .num { font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 28px; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+  .sum-kcal .unit { font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- 날짜별 일정 모달 ---------- */
+  .day-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .day-modal {
+    background: var(--paper-raised); border-radius: var(--radius-l); box-shadow: var(--shadow);
+    padding: 20px 22px; width: 100%; max-width: 360px; max-height: 80vh; display: flex; flex-direction: column;
+  }
+  .day-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .day-modal-head h3 { font-size: 16px; margin: 0; }
+  .day-modal-close { background: none; border: none; font-size: 20px; color: var(--ink-faint); cursor: pointer; line-height: 1; padding: 0; }
+  .day-modal-close:hover { color: var(--ink); }
+  .day-modal-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; margin-bottom: 14px; }
+  .day-modal-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 9px 11px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13.5px;
+  }
+  .day-modal-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px; line-height: 1; }
+  .day-modal-del:hover { color: var(--bad); }
+  .day-modal-add { display: flex; gap: 8px; }
+  .day-modal-add input { flex: 1; }
 
   /* ---------- form basics ---------- */
   label { font-size: 12.5px; color: var(--ink-soft); display: block; margin-bottom: 5px; }
@@ -429,38 +433,72 @@
     <span class="sync-status" id="syncStatus">아직 동기화 안 됨</span>
   </div>
 
-  <section class="grid-top">
-    <div class="card" id="summaryCard">
-      <h2>오늘의 요약 <span class="sub">실시간 반영</span></h2>
-      <div class="summary-hero">
-        <span class="num" id="heroKcal">0</span>
-        <span class="unit">kcal 섭취</span>
-        <span class="net-tag" id="netTag">순 0 kcal</span>
-      </div>
-      <div class="stat-grid">
-        <div class="stat"><div class="k">탄수화물</div><div class="v" id="stCarb">0<small> g</small></div></div>
-        <div class="stat"><div class="k">단백질</div><div class="v" id="stProt">0<small> g</small></div></div>
-        <div class="stat"><div class="k">지방</div><div class="v" id="stFat">0<small> g</small></div></div>
-        <div class="stat"><div class="k">단순당</div><div class="v" id="stSugar">0<small> g</small></div></div>
-        <div class="stat"><div class="k">운동 소모</div><div class="v" id="stBurn">0<small> kcal</small></div></div>
-        <div class="stat"><div class="k">수면</div><div class="v" id="stSleep">–<small> 시간</small></div></div>
-      </div>
-      <div class="pill-row" id="pillRow"></div>
+  <section class="card" id="calendarCard">
+    <div class="section-head">
+      <h2>이번 달 <span class="sub" id="calMonthLabel"></span></h2>
+      <span class="sub">날짜 클릭 → 그날 일정 여러 개 추가/삭제</span>
+    </div>
+    <div class="cal-wrap">
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="cal-legend">
+      <span><i class="legend-icon bowel">★</i>배변</span>
+      <span><i class="legend-icon exercise"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M2 9h2v6H2zM20 9h2v6h-2zM5 7h2v10H5zM17 7h2v10h-2zM8 11h8v2H8z"/></svg></i>운동</span>
+      <span><i class="dot plan"></i>일정</span>
+      <span><i class="dot note"></i>메모</span>
+      <span>· 체중은 숫자로 표시돼요</span>
     </div>
 
-    <div class="card">
-      <h2>이번 달 <span class="sub" id="calMonthLabel"></span></h2>
-      <div class="cal-wrap">
-        <div class="cal-grid" id="calGrid"></div>
+    <details class="recurring-toggle">
+      <summary>🔁 반복 일정 관리</summary>
+      <div class="recurring-body">
+        <div class="recurring-add-row">
+          <span class="recurring-label">매주</span>
+          <select id="recurWeeklyDow">
+            <option value="0">일요일</option>
+            <option value="1">월요일</option>
+            <option value="2">화요일</option>
+            <option value="3">수요일</option>
+            <option value="4">목요일</option>
+            <option value="5">금요일</option>
+            <option value="6">토요일</option>
+          </select>
+          <input type="text" id="recurWeeklyText" placeholder="예: 요가 수업">
+          <button type="button" class="btn small" id="recurWeeklyAddBtn">추가</button>
+        </div>
+        <div class="recurring-add-row">
+          <span class="recurring-label">매달</span>
+          <select id="recurMonthlyDay"></select>
+          <span class="recurring-label" style="margin:0;">일</span>
+          <input type="text" id="recurMonthlyText" placeholder="예: 병원 예약">
+          <button type="button" class="btn small" id="recurMonthlyAddBtn">추가</button>
+        </div>
+        <div class="recurring-list" id="recurringList"></div>
       </div>
-      <div class="cal-legend">
-        <span><i class="legend-icon bowel">★</i>배변</span>
-        <span><i class="legend-icon exercise"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M2 9h2v6H2zM20 9h2v6h-2zM5 7h2v10H5zM17 7h2v10h-2zM8 11h8v2H8z"/></svg></i>운동</span>
-        <span><i class="dot plan"></i>일정</span>
-        <span><i class="dot note"></i>메모</span>
-        <span>· 체중은 숫자로 · 날짜 클릭하면 일정 입력</span>
+    </details>
+  </section>
+
+  <section class="card" id="summaryCard">
+    <div class="section-head">
+      <h2 style="margin:0;">오늘의 요약</h2>
+      <span class="sub">실시간 반영</span>
+    </div>
+    <div class="summary-row-wrap">
+      <div class="summary-row" id="summaryRow">
+        <div class="sum-item sum-kcal">
+          <span class="num" id="heroKcal">0</span>
+          <span class="unit">kcal</span>
+        </div>
+        <div class="sum-item"><div class="k">순kcal</div><div class="v" id="netTag">0</div></div>
+        <div class="sum-item"><div class="k">탄수화물</div><div class="v" id="stCarb">0<small>g</small></div></div>
+        <div class="sum-item"><div class="k">단백질</div><div class="v" id="stProt">0<small>g</small></div></div>
+        <div class="sum-item"><div class="k">지방</div><div class="v" id="stFat">0<small>g</small></div></div>
+        <div class="sum-item"><div class="k">단순당</div><div class="v" id="stSugar">0<small>g</small></div></div>
+        <div class="sum-item"><div class="k">운동 소모</div><div class="v" id="stBurn">0<small>kcal</small></div></div>
+        <div class="sum-item"><div class="k">수면</div><div class="v" id="stSleep">–<small>시간</small></div></div>
       </div>
     </div>
+    <div class="pill-row" id="pillRow"></div>
   </section>
 
   <section class="card" id="morningCard">
@@ -525,7 +563,8 @@
   </section>
 
   <section class="card" id="etcCard">
-    <div class="section-head"><h2 style="margin:0;">수면 · 배변 · 일정 · 특이사항</h2></div>
+    <div class="section-head"><h2 style="margin:0;">수면 · 배변 · 특이사항</h2></div>
+    <p class="search-hint" style="margin-top:-8px;margin-bottom:16px;">일정은 위 캘린더에서 날짜를 눌러 입력해요.</p>
     <div class="field-row" style="grid-template-columns: 1fr; margin-bottom:16px;">
       <div>
         <label for="sleepInput">수면시간 (시간)</label>
@@ -539,9 +578,6 @@
       <button id="bowelNo" type="button">배변 안 함</button>
     </div>
 
-    <label for="scheduleInput">오늘 일정</label>
-    <input type="text" id="scheduleInput" placeholder="예: 오후 3시 병원, 저녁 약속" style="margin-bottom:18px;">
-
     <label>특이사항 태그</label>
     <div class="chip-row" id="tagRow"></div>
 
@@ -549,7 +585,21 @@
     <textarea id="noteInput" placeholder="오늘의 컨디션, 생리주기 등을 자유롭게 적어보세요."></textarea>
   </section>
 
-  <p class="proto-note">오늘 입력은 이 브라우저에 자동 저장돼요. 위 "☁️ 구글시트에 저장" 버튼을 누르면 구글시트에도 백업되고, 추이 그래프에 실제 기록이 반영돼요. 음식 검색은 식약처 식품영양성분DB 표준데이터 기반이에요.</p>
+  <p class="proto-note">오늘 입력은 이 브라우저에 자동 저장돼요. 위 "☁️ 구글시트에 저장" 버튼을 누르면 구글시트에도 백업되고, 캘린더에 실제 기록이 반영돼요. 음식 검색은 식약처 식품영양성분DB 표준데이터 기반이에요.</p>
+</div>
+
+<div class="day-modal-overlay" id="dayModalOverlay" style="display:none;">
+  <div class="day-modal">
+    <div class="day-modal-head">
+      <h3 id="dayModalTitle"></h3>
+      <button type="button" class="day-modal-close" id="dayModalClose" aria-label="닫기">×</button>
+    </div>
+    <div class="day-modal-list" id="dayModalList"></div>
+    <div class="day-modal-add">
+      <input type="text" id="dayModalInput" placeholder="일정 추가">
+      <button type="button" class="btn small" id="dayModalAddBtn">추가</button>
+    </div>
+  </div>
 </div>
 
 <script src="foods-real.js"></script>
@@ -703,7 +753,7 @@
     exercises: [],
     sleep: null,
     bowel: null,
-    schedule: '',
+    scheduleItems: [],
     tags: [],
     note: '',
   };
@@ -1092,8 +1142,6 @@
   });
   $('#bowelYes').addEventListener('click', () => { state.bowel = true; render(); });
   $('#bowelNo').addEventListener('click', () => { state.bowel = false; render(); });
-  $('#scheduleInput').value = state.schedule || '';
-  $('#scheduleInput').addEventListener('input', (e) => { state.schedule = e.target.value; saveState(); });
   function renderBowel() {
     $('#bowelYes').classList.toggle('on', state.bowel === true);
     $('#bowelNo').classList.toggle('on', state.bowel === false);
@@ -1123,6 +1171,59 @@
     return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   }
 
+  // ---------- 반복 일정 (매주/매달, 브라우저에 저장 · 캘린더에 자동 표시) ----------
+  const RECUR_KEY = 'dietTracker:recurringSchedules';
+  let recurringSchedules = [];
+  try {
+    const savedRecur = localStorage.getItem(RECUR_KEY);
+    if (savedRecur) recurringSchedules = JSON.parse(savedRecur);
+  } catch (e) { /* 무시 */ }
+  function saveRecurring_() {
+    try { localStorage.setItem(RECUR_KEY, JSON.stringify(recurringSchedules)); } catch (e) {}
+  }
+  function recurringItemsForDate_(dateObj) {
+    const dow = dateObj.getDay(), dom = dateObj.getDate();
+    return recurringSchedules.filter(r => (r.type === 'weekly' && r.dow === dow) || (r.type === 'monthly' && r.day === dom));
+  }
+  const DOW_NAMES = ['일','월','화','수','목','금','토'];
+  function renderRecurringList() {
+    const el = $('#recurringList');
+    if (!recurringSchedules.length) { el.innerHTML = '<div class="empty-row">등록된 반복 일정이 없어요</div>'; return; }
+    el.innerHTML = recurringSchedules.map((r, i) => {
+      const label = r.type === 'weekly' ? `매주 ${DOW_NAMES[r.dow]}요일` : `매달 ${r.day}일`;
+      return `<div class="recurring-item"><span>${label} · ${escAttr_(r.text)}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
+    }).join('');
+  }
+  for (let i = 1; i <= 31; i++) {
+    const o = document.createElement('option'); o.value = i; o.textContent = i;
+    $('#recurMonthlyDay').appendChild(o);
+  }
+  $('#recurWeeklyAddBtn').addEventListener('click', () => {
+    const text = $('#recurWeeklyText').value.trim();
+    if (!text) return;
+    recurringSchedules.push({ type: 'weekly', dow: parseInt($('#recurWeeklyDow').value), text });
+    saveRecurring_(); renderRecurringList(); renderCalendar();
+    $('#recurWeeklyText').value = '';
+  });
+  $('#recurMonthlyAddBtn').addEventListener('click', () => {
+    const text = $('#recurMonthlyText').value.trim();
+    if (!text) return;
+    recurringSchedules.push({ type: 'monthly', day: parseInt($('#recurMonthlyDay').value), text });
+    saveRecurring_(); renderRecurringList(); renderCalendar();
+    $('#recurMonthlyText').value = '';
+  });
+  $('#recurringList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.recurring-del');
+    if (!btn) return;
+    recurringSchedules.splice(parseInt(btn.dataset.idx), 1);
+    saveRecurring_(); renderRecurringList(); renderCalendar();
+  });
+  renderRecurringList();
+
+  // ---------- 월 캘린더 렌더 ----------
+  let calDataByDate = {};
+  let calScheduleOverrides = {}; // 방금 수정한 일정을 서버 재조회 전에도 화면에 바로 보여주기 위한 캐시
+
   async function renderCalendar() {
     const calGrid = $('#calGrid');
     const now = new Date();
@@ -1143,25 +1244,35 @@
     if (state.bowel !== null) todayRec.bowel = state.bowel === true ? '배변함' : '배변안함';
     if (todayBurn) todayRec.burn = todayBurn;
     if (state.note) todayRec.note = state.note;
-    if (state.schedule) todayRec.schedule = state.schedule;
+    if (state.scheduleItems && state.scheduleItems.length) todayRec.scheduleItems = state.scheduleItems;
     calDataByDate[todayISO] = todayRec;
 
     // 방금 캘린더에서 직접 수정한 일정은 서버 응답보다 우선
     Object.keys(calScheduleOverrides).forEach(d => {
-      calDataByDate[d] = Object.assign({}, calDataByDate[d], { schedule: calScheduleOverrides[d] });
+      calDataByDate[d] = Object.assign({}, calDataByDate[d], { scheduleItems: calScheduleOverrides[d] });
     });
 
     let html = '';
-    ['일','월','화','수','목','금','토'].forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
+    DOW_NAMES.forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
     for (let i = 0; i < firstDow; i++) html += `<div class="cal-cell empty"></div>`;
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const rec = calDataByDate[dateStr];
       const isToday = dateStr === todayISO;
+      const recurItems = recurringItemsForDate_(new Date(year, month, d)).map(r => ({ text: r.text, recur: true }));
+      const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false }));
+      const allItems = recurItems.concat(realItems);
+
       let inner = `<div class="cal-day-num">${d}</div>`;
       if (rec && rec.weight) inner += `<div class="cal-weight">${rec.weight}kg</div>`;
-      if (rec && rec.schedule) inner += `<div class="cal-schedule-text" title="${escAttr_(rec.schedule)}">${escAttr_(rec.schedule)}</div>`;
+      if (allItems.length) {
+        const shown = allItems.slice(0, 3);
+        const extra = allItems.length - shown.length;
+        inner += '<div class="cal-schedule-list">' + shown.map(it =>
+          `<div class="cal-schedule-text${it.recur ? ' recur' : ''}" title="${escAttr_(it.text)}">${it.recur ? '🔁 ' : ''}${escAttr_(it.text)}</div>`
+        ).join('') + (extra > 0 ? `<div class="cal-schedule-more">+${extra}개 더</div>` : '') + '</div>';
+      }
       if (rec) {
         const badges = [];
         if (rec.bowel === '배변함') badges.push('<span class="cal-icon cal-bowel" title="배변함">★</span>');
@@ -1174,51 +1285,78 @@
     calGrid.innerHTML = html;
   }
 
-  // ---------- 캘린더 날짜 칸을 눌러서 일정 직접 입력 ----------
-  let calDataByDate = {};
-  let calScheduleOverrides = {}; // 서버에 반영되는 동안 화면에 바로 보여주기 위한 임시 캐시
+  // ---------- 날짜 클릭 → 그날 일정 여러 개 추가/삭제 (모달) ----------
+  let currentModalDate = null;
 
-  function openCalScheduleEditor(cellEl, dateStr, currentText) {
-    const dayNum = cellEl.querySelector('.cal-day-num').outerHTML;
-    cellEl.innerHTML = `${dayNum}<input type="text" class="cal-schedule-input" value="${escAttr_(currentText || '')}" placeholder="일정 입력">`;
-    const input = cellEl.querySelector('.cal-schedule-input');
-    input.focus();
-    input.select();
-    let done = false;
-    const save = async () => {
-      if (done) return;
-      done = true;
-      const val = input.value.trim();
-      calScheduleOverrides[dateStr] = val;
-      if (dateStr === todayISO) {
-        state.schedule = val;
-        $('#scheduleInput').value = val;
-        saveState();
-      }
-      renderCalendar();
-      if (SHEETS_URL) {
-        try {
-          await fetch(SHEETS_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ token: SHEETS_TOKEN, action: 'schedule', date: dateStr, schedule: val }),
-          });
-        } catch (err) { console.warn('일정 저장 실패', err); }
-      }
-    };
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') input.blur();
-      if (e.key === 'Escape') { done = true; renderCalendar(); }
-    });
-    input.addEventListener('blur', save);
+  function renderDayModalList_(items) {
+    const listEl = $('#dayModalList');
+    listEl.innerHTML = items.length
+      ? items.map((t, i) => `<div class="day-modal-item"><span>${escAttr_(t)}</span><button type="button" class="day-modal-del" data-idx="${i}" aria-label="삭제">×</button></div>`).join('')
+      : '<div class="empty-row">아직 일정이 없어요</div>';
   }
+
+  function openDayModal_(dateStr) {
+    currentModalDate = dateStr;
+    const rec = calDataByDate[dateStr];
+    const items = (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
+    const d = new Date(dateStr + 'T00:00:00');
+    $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
+    renderDayModalList_(items);
+    $('#dayModalInput').value = '';
+    $('#dayModalOverlay').style.display = 'flex';
+    $('#dayModalInput').focus();
+  }
+  function closeDayModal_() {
+    $('#dayModalOverlay').style.display = 'none';
+    currentModalDate = null;
+  }
+  async function saveDaySchedule_(dateStr, items) {
+    calScheduleOverrides[dateStr] = items;
+    if (dateStr === todayISO) { state.scheduleItems = items; saveState(); }
+    renderCalendar();
+    if (SHEETS_URL) {
+      try {
+        await fetch(SHEETS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ token: SHEETS_TOKEN, action: 'schedule', date: dateStr, scheduleItems: items }),
+        });
+      } catch (err) { console.warn('일정 저장 실패', err); }
+    }
+  }
+  function currentModalItems_() {
+    const rec = calDataByDate[currentModalDate];
+    return (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
+  }
+  $('#dayModalAddBtn').addEventListener('click', () => {
+    const input = $('#dayModalInput');
+    const val = input.value.trim();
+    if (!val || !currentModalDate) return;
+    const items = currentModalItems_();
+    items.push(val);
+    renderDayModalList_(items);
+    calDataByDate[currentModalDate] = Object.assign({}, calDataByDate[currentModalDate], { scheduleItems: items });
+    input.value = '';
+    input.focus();
+    saveDaySchedule_(currentModalDate, items);
+  });
+  $('#dayModalInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#dayModalAddBtn').click(); });
+  $('#dayModalList').addEventListener('click', (e) => {
+    const delBtn = e.target.closest('.day-modal-del');
+    if (!delBtn || !currentModalDate) return;
+    const items = currentModalItems_();
+    items.splice(parseInt(delBtn.dataset.idx), 1);
+    renderDayModalList_(items);
+    calDataByDate[currentModalDate] = Object.assign({}, calDataByDate[currentModalDate], { scheduleItems: items });
+    saveDaySchedule_(currentModalDate, items);
+  });
+  $('#dayModalClose').addEventListener('click', closeDayModal_);
+  $('#dayModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'dayModalOverlay') closeDayModal_(); });
 
   $('#calGrid').addEventListener('click', (e) => {
     const cell = e.target.closest('.cal-cell[data-date]');
-    if (!cell || cell.querySelector('.cal-schedule-input')) return;
-    const dateStr = cell.dataset.date;
-    const rec = calDataByDate[dateStr];
-    openCalScheduleEditor(cell, dateStr, rec ? rec.schedule : '');
+    if (!cell) return;
+    openDayModal_(cell.dataset.date);
   });
 
   function computeDayTotals() {
@@ -1289,7 +1427,7 @@
         weight: state.weight, waist: state.waist, thigh: state.thigh, hip: state.hip,
         skipMeasure: state.skipMeasure,
         kcal: day.kcal, carb: day.carb, prot: day.prot, fat: day.fat, sugar: day.sugar,
-        burn, net, sleep: state.sleep, bowel: state.bowel, schedule: state.schedule, tags: state.tags, note: state.note,
+        burn, net, sleep: state.sleep, bowel: state.bowel, scheduleItems: state.scheduleItems, tags: state.tags, note: state.note,
         meals: state.meals, exercises: state.exercises,
       };
       const res = await fetch(SHEETS_URL, {

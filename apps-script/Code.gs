@@ -36,11 +36,21 @@ function formatDate_(v) {
   }
 }
 
+// 일정 칸은 JSON 배열로 저장됨. 예전 버전(문자열 하나)이 남아있으면 배열 1개짜리로 변환
+function parseScheduleItems_(v) {
+  if (!v) return [];
+  try {
+    var parsed = JSON.parse(v);
+    if (Array.isArray(parsed)) return parsed;
+  } catch (e) { /* 예전 형식(순수 문자열) */ }
+  return [String(v)];
+}
+
 function rowToObject_(r) {
   return {
     date: formatDate_(r[0]), weight: r[1], waist: r[2], thigh: r[3], hip: r[4], skipMeasure: r[5],
     kcal: r[6], carb: r[7], prot: r[8], fat: r[9], sugar: r[10], burn: r[11], net: r[12],
-    sleep: r[13], bowel: r[14], tags: r[15], note: r[16], schedule: r[19]
+    sleep: r[13], bowel: r[14], tags: r[15], note: r[16], scheduleItems: parseScheduleItems_(r[19])
   };
 }
 
@@ -79,7 +89,7 @@ function setScheduleOnly_(sheet, payload) {
     sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
   }
   var scheduleCol = HEADERS.length; // 일정은 마지막 칸
-  sheet.getRange(rowIndex, scheduleCol).setValue(payload.schedule || '');
+  sheet.getRange(rowIndex, scheduleCol).setValue(JSON.stringify(payload.scheduleItems || []));
   return { ok: true };
 }
 
@@ -117,7 +127,7 @@ function doPost(e) {
       payload.note || '',
       JSON.stringify(payload.meals || {}),
       JSON.stringify(payload.exercises || []),
-      payload.schedule || ''
+      JSON.stringify(payload.scheduleItems || [])
     ];
     if (rowIndex === -1) {
       rowIndex = sheet.getLastRow() + 1;
