@@ -213,18 +213,29 @@
   .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
   .pill.neutral { color: var(--ink-soft); }
 
-  /* ---------- trend chart ---------- */
-  .chart-legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
-  .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
-  .chart-legend i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
-  svg.trend { width: 100%; height: auto; overflow: visible; }
-  svg.trend .grid-line { stroke: var(--line); stroke-width: 1; }
-  svg.trend .axis-label { fill: var(--ink-faint); font-size: 10px; font-family: 'Gowun Dodum', sans-serif; }
-  svg.trend .line-weight { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  svg.trend .line-kcal { fill: none; stroke: var(--warn); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 4 3; }
-  svg.trend .dot-weight { fill: var(--accent); }
-  svg.trend .dot-kcal { fill: var(--warn); }
-  svg.trend .dot-today { stroke: var(--paper-raised); stroke-width: 2; }
+  /* ---------- 월 캘린더 ---------- */
+  .cal-wrap { overflow-x: auto; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; min-width: 300px; }
+  .cal-dow { text-align: center; font-size: 10.5px; color: var(--ink-faint); padding-bottom: 4px; }
+  .cal-cell {
+    min-height: 58px; border: 1px solid var(--line); border-radius: 8px;
+    padding: 4px 5px; background: var(--paper-sunken);
+  }
+  .cal-cell.empty { border-color: transparent; background: transparent; }
+  .cal-cell.today { border-color: var(--accent); background: var(--accent-soft); }
+  .cal-day-num { font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .cal-cell.today .cal-day-num { color: var(--accent-ink); font-weight: 700; }
+  .cal-weight { font-size: 12px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .cal-badges { display: flex; gap: 3px; margin-top: 4px; }
+  .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .cal-dot.good { background: var(--good); }
+  .cal-dot.warn { background: var(--warn); }
+  .cal-dot.note { background: var(--accent); }
+  .cal-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .cal-legend .dot.good { background: var(--good); }
+  .cal-legend .dot.warn { background: var(--warn); }
+  .cal-legend .dot.note { background: var(--accent); }
 
   /* ---------- recommendation banner ---------- */
   .rec-banner {
@@ -452,12 +463,16 @@
     </div>
 
     <div class="card">
-      <h2>7일 추이 <span class="sub">체중 · 하루 누적 kcal</span></h2>
-      <div class="chart-legend">
-        <span><i style="background:var(--accent)"></i>체중(kg)</span>
-        <span><i style="background:var(--warn)"></i>섭취 kcal</span>
+      <h2>이번 달 <span class="sub" id="calMonthLabel"></span></h2>
+      <div class="cal-wrap">
+        <div class="cal-grid" id="calGrid"></div>
       </div>
-      <svg class="trend" id="trendChart" viewBox="0 0 520 200"></svg>
+      <div class="cal-legend">
+        <span><i class="dot good"></i>배변</span>
+        <span><i class="dot warn"></i>운동</span>
+        <span><i class="dot note"></i>메모/일정</span>
+        <span>· 체중은 숫자로 표시돼요</span>
+      </div>
     </div>
   </section>
 
@@ -697,17 +712,6 @@
   ];
 
   const TAGS = ['두통','소화불량','피로','스트레스','생리주기','컨디션좋음'];
-
-  // 구글시트에서 실제 히스토리를 못 불러왔을 때 보여주는 샘플 데이터
-  const FALLBACK_HISTORY = [
-    { day:'8/17', weight:59.4, kcal:1980 },
-    { day:'8/18', weight:59.2, kcal:2150 },
-    { day:'8/19', weight:59.1, kcal:1870 },
-    { day:'8/20', weight:58.9, kcal:2400 },
-    { day:'8/21', weight:58.8, kcal:1760 },
-    { day:'8/22', weight:58.6, kcal:2020 },
-  ];
-  let historyData = FALLBACK_HISTORY;
 
   // ---------- state ----------
   const state = {
@@ -1156,40 +1160,53 @@
     return recs.slice(0, 4);
   }
 
-  // ---------- trend chart ----------
-  function renderChart(todayWeight, todayKcal) {
-    const data = historyData.concat([{ day:'오늘', weight: todayWeight, kcal: todayKcal, isToday:true }]);
-    const w = 520, h = 200, padL = 34, padR = 10, padT = 10, padB = 22;
-    const plotW = w - padL - padR, plotH = h - padT - padB;
+  // ---------- 월 캘린더 ----------
+  function escAttr_(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
 
-    const weights = data.map(d => d.weight);
-    const kcals = data.map(d => d.kcal);
-    const wMin = Math.min(...weights) - 0.6, wMax = Math.max(...weights) + 0.6;
-    const kMin = Math.min(...kcals) - 200, kMax = Math.max(...kcals) + 200;
+  async function renderCalendar() {
+    const calGrid = $('#calGrid');
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    $('#calMonthLabel').textContent = `${year}년 ${month + 1}월`;
 
-    const x = i => padL + (plotW * i) / (data.length - 1);
-    const yW = v => padT + plotH - ((v - wMin) / (wMax - wMin)) * plotH;
-    const yK = v => padT + plotH - ((v - kMin) / (kMax - kMin)) * plotH;
+    const firstDow = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    let svg = '';
-    for (let i = 0; i <= 3; i++) {
-      const gy = padT + (plotH * i) / 3;
-      svg += `<line class="grid-line" x1="${padL}" y1="${gy}" x2="${w-padR}" y2="${gy}" />`;
+    const rows = await fetchSheetRows_(45);
+    const byDate = {};
+    if (rows) rows.forEach(r => { if (r.date) byDate[r.date] = r; });
+
+    // 오늘 기록은 아직 구글시트에 저장 전일 수 있으니 현재 화면 상태로 보강
+    const { burn: todayBurn } = computeDayTotals();
+    const todayRec = Object.assign({}, byDate[todayISO]);
+    if (state.weight) todayRec.weight = state.weight;
+    if (state.bowel !== null) todayRec.bowel = state.bowel === true ? '배변함' : '배변안함';
+    if (todayBurn) todayRec.burn = todayBurn;
+    if (state.note) todayRec.note = state.note;
+    byDate[todayISO] = todayRec;
+
+    let html = '';
+    ['일','월','화','수','목','금','토'].forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
+    for (let i = 0; i < firstDow; i++) html += `<div class="cal-cell empty"></div>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const rec = byDate[dateStr];
+      const isToday = dateStr === todayISO;
+      let inner = `<div class="cal-day-num">${d}</div>`;
+      if (rec) {
+        if (rec.weight) inner += `<div class="cal-weight">${rec.weight}kg</div>`;
+        const badges = [];
+        if (rec.bowel === '배변함') badges.push('<span class="cal-dot good" title="배변함"></span>');
+        if (rec.burn) badges.push(`<span class="cal-dot warn" title="운동 ${rec.burn}kcal"></span>`);
+        if (rec.note) badges.push(`<span class="cal-dot note" title="${escAttr_(rec.note)}"></span>`);
+        if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
+      }
+      html += `<div class="cal-cell${isToday ? ' today' : ''}">${inner}</div>`;
     }
-
-    const weightPath = data.map((d,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${yW(d.weight).toFixed(1)}`).join(' ');
-    const kcalPath = data.map((d,i) => `${i===0?'M':'L'} ${x(i).toFixed(1)} ${yK(d.kcal).toFixed(1)}`).join(' ');
-    svg += `<path class="line-weight" d="${weightPath}" />`;
-    svg += `<path class="line-kcal" d="${kcalPath}" />`;
-
-    data.forEach((d,i) => {
-      const todayCls = d.isToday ? ' dot-today' : '';
-      svg += `<circle class="dot-weight${todayCls}" cx="${x(i).toFixed(1)}" cy="${yW(d.weight).toFixed(1)}" r="${d.isToday?4.5:3}" />`;
-      svg += `<circle class="dot-kcal${todayCls}" cx="${x(i).toFixed(1)}" cy="${yK(d.kcal).toFixed(1)}" r="${d.isToday?4.5:3}" />`;
-      svg += `<text class="axis-label" x="${x(i).toFixed(1)}" y="${h-4}" text-anchor="middle">${d.day}</text>`;
-    });
-
-    $('#trendChart').innerHTML = svg;
+    calGrid.innerHTML = html;
   }
 
   function computeDayTotals() {
@@ -1235,17 +1252,10 @@
     $('#recList').innerHTML = computeRecommendations(day, burn, net)
       .map(r => `<div class="rec-item">${r}</div>`).join('');
 
-    renderChart(state.weight || historyData[historyData.length-1].weight, day.kcal || historyData[historyData.length-1].kcal);
-
     saveState();
   }
 
   // ---------- Phase 2: Google Sheets 동기화 ----------
-  function shortDate_(iso) {
-    const parts = String(iso).split('-');
-    return parts.length === 3 ? `${parseInt(parts[1],10)}/${parseInt(parts[2],10)}` : iso;
-  }
-
   async function fetchSheetRows_(days) {
     if (!SHEETS_URL) return null;
     try {
@@ -1256,19 +1266,6 @@
     } catch (err) {
       console.warn('구글시트 히스토리 불러오기 실패', err);
       return null;
-    }
-  }
-
-  async function loadRealHistory() {
-    const rows = await fetchSheetRows_(8);
-    if (!rows) return;
-    const past = rows
-      .filter(r => r.date && r.date !== todayISO && r.weight !== '' && r.kcal)
-      .map(r => ({ day: shortDate_(r.date), weight: parseFloat(r.weight), kcal: parseFloat(r.kcal) }))
-      .filter(d => !isNaN(d.weight) && !isNaN(d.kcal));
-    if (past.length >= 2) {
-      historyData = past.slice(-6);
-      render();
     }
   }
 
@@ -1294,7 +1291,7 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'save failed');
       statusEl.textContent = '저장됨 · ' + new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
-      loadRealHistory();
+      renderCalendar();
     } catch (err) {
       statusEl.textContent = '저장 실패 — 다시 시도해주세요';
       console.warn('구글시트 저장 실패', err);
@@ -1303,7 +1300,7 @@
   $('#syncBtn').addEventListener('click', syncToSheets);
 
   render();
-  loadRealHistory();
+  renderCalendar();
 })();
 </script>
 </body>
