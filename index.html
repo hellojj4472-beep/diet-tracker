@@ -297,6 +297,9 @@
 
   .search-hint { font-size: 11.5px; color: var(--ink-faint); margin-top: 6px; }
 
+  .sync-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sync-row .sync-status { font-size: 12.5px; color: var(--ink-faint); }
+
   /* ---------- meal grid ---------- */
   .meal-grid {
     display: grid;
@@ -405,6 +408,11 @@
     </div>
     <div class="date" id="todayDate"></div>
   </header>
+
+  <div class="sync-row">
+    <button class="btn small" id="syncBtn" type="button">☁️ 구글시트에 저장</button>
+    <span class="sync-status" id="syncStatus">아직 동기화 안 됨</span>
+  </div>
 
   <section class="grid-top">
     <div class="card" id="summaryCard">
@@ -526,7 +534,7 @@
     <textarea id="noteInput" placeholder="오늘의 컨디션, 생리주기, 특별한 일정 등을 자유롭게 적어보세요."></textarea>
   </section>
 
-  <p class="proto-note">지금은 로컬(이 브라우저)에만 저장되는 단계예요. 새로고침해도 오늘 입력은 유지됩니다. Google Sheets·외부 식품 API 연동은 다음 단계에서 붙일 예정입니다.</p>
+  <p class="proto-note">오늘 입력은 이 브라우저에 자동 저장돼요. 위 "☁️ 구글시트에 저장" 버튼을 누르면 구글시트에도 백업되고, 추이 그래프에 실제 기록이 반영돼요. 외부 식품 API 연동은 다음 단계에서 붙일 예정입니다.</p>
 </div>
 
 <script>
@@ -538,6 +546,11 @@
   const today = new Date();
   const todayISO = today.toISOString().slice(0,10);
   const STORAGE_KEY = 'dietTracker:' + todayISO;
+
+  // Phase 2: Google Sheets 연동 (Apps Script 웹앱)
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzBhIWfigPEnnuV_FMs0uBJhzN5eZwneI0SM_0cqEQAPTCqrbThH1ECX15qR7XSALM6yg/exec';
+  const SHEETS_TOKEN = 'diet-178744992620749';
+
   $('#todayDate').textContent = today.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
 
   // ---------- data ----------
@@ -636,7 +649,8 @@
 
   const TAGS = ['두통','소화불량','피로','스트레스','생리주기','컨디션좋음'];
 
-  const HISTORY = [
+  // 구글시트에서 실제 히스토리를 못 불러왔을 때 보여주는 샘플 데이터
+  const FALLBACK_HISTORY = [
     { day:'8/17', weight:59.4, kcal:1980 },
     { day:'8/18', weight:59.2, kcal:2150 },
     { day:'8/19', weight:59.1, kcal:1870 },
@@ -644,6 +658,7 @@
     { day:'8/21', weight:58.8, kcal:1760 },
     { day:'8/22', weight:58.6, kcal:2020 },
   ];
+  let historyData = FALLBACK_HISTORY;
 
   // ---------- state ----------
   const state = {
@@ -969,7 +984,7 @@
 
   // ---------- trend chart ----------
   function renderChart(todayWeight, todayKcal) {
-    const data = HISTORY.concat([{ day:'오늘', weight: todayWeight, kcal: todayKcal, isToday:true }]);
+    const data = historyData.concat([{ day:'오늘', weight: todayWeight, kcal: todayKcal, isToday:true }]);
     const w = 520, h = 200, padL = 34, padR = 10, padT = 10, padB = 22;
     const plotW = w - padL - padR, plotH = h - padT - padB;
 
@@ -1003,19 +1018,23 @@
     $('#trendChart').innerHTML = svg;
   }
 
+  function computeDayTotals() {
+    const day = Object.values(state.meals).reduce((acc, items) => {
+      const s = sumMacros(items);
+      return { carb: round1(acc.carb+s.carb), prot: round1(acc.prot+s.prot), fat: round1(acc.fat+s.fat), sugar: round1(acc.sugar+s.sugar), kcal: acc.kcal+s.kcal };
+    }, { carb:0, prot:0, fat:0, sugar:0, kcal:0 });
+    const burn = state.exercises.reduce((a,e) => a + e.kcal, 0);
+    const net = day.kcal - burn;
+    return { day, burn, net };
+  }
+
   // ---------- master render ----------
   function render() {
     renderMealCards();
     renderExercise();
     renderBowel();
 
-    const day = Object.values(state.meals).reduce((acc, items) => {
-      const s = sumMacros(items);
-      return { carb: round1(acc.carb+s.carb), prot: round1(acc.prot+s.prot), fat: round1(acc.fat+s.fat), sugar: round1(acc.sugar+s.sugar), kcal: acc.kcal+s.kcal };
-    }, { carb:0, prot:0, fat:0, sugar:0, kcal:0 });
-
-    const burn = state.exercises.reduce((a,e) => a + e.kcal, 0);
-    const net = day.kcal - burn;
+    const { day, burn, net } = computeDayTotals();
 
     $('#heroKcal').textContent = day.kcal;
     $('#netTag').textContent = `순 ${net} kcal`;
@@ -1042,12 +1061,75 @@
     $('#recList').innerHTML = computeRecommendations(day, burn, net)
       .map(r => `<div class="rec-item">${r}</div>`).join('');
 
-    renderChart(state.weight || HISTORY[HISTORY.length-1].weight, day.kcal || HISTORY[HISTORY.length-1].kcal);
+    renderChart(state.weight || historyData[historyData.length-1].weight, day.kcal || historyData[historyData.length-1].kcal);
 
     saveState();
   }
 
+  // ---------- Phase 2: Google Sheets 동기화 ----------
+  function shortDate_(iso) {
+    const parts = String(iso).split('-');
+    return parts.length === 3 ? `${parseInt(parts[1],10)}/${parseInt(parts[2],10)}` : iso;
+  }
+
+  async function fetchSheetRows_(days) {
+    if (!SHEETS_URL) return null;
+    try {
+      const res = await fetch(`${SHEETS_URL}?token=${encodeURIComponent(SHEETS_TOKEN)}&days=${days}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'fetch failed');
+      return data.rows;
+    } catch (err) {
+      console.warn('구글시트 히스토리 불러오기 실패', err);
+      return null;
+    }
+  }
+
+  async function loadRealHistory() {
+    const rows = await fetchSheetRows_(8);
+    if (!rows) return;
+    const past = rows
+      .filter(r => r.date && r.date !== todayISO && r.weight !== '' && r.kcal)
+      .map(r => ({ day: shortDate_(r.date), weight: parseFloat(r.weight), kcal: parseFloat(r.kcal) }))
+      .filter(d => !isNaN(d.weight) && !isNaN(d.kcal));
+    if (past.length >= 2) {
+      historyData = past.slice(-6);
+      render();
+    }
+  }
+
+  async function syncToSheets() {
+    const statusEl = $('#syncStatus');
+    if (!SHEETS_URL) { statusEl.textContent = '연동 주소가 설정되지 않았어요'; return; }
+    statusEl.textContent = '저장 중…';
+    try {
+      const { day, burn, net } = computeDayTotals();
+      const payload = {
+        token: SHEETS_TOKEN, date: todayISO,
+        weight: state.weight, waist: state.waist, thigh: state.thigh, hip: state.hip,
+        skipMeasure: state.skipMeasure,
+        kcal: day.kcal, carb: day.carb, prot: day.prot, fat: day.fat, sugar: day.sugar,
+        burn, net, sleep: state.sleep, bowel: state.bowel, tags: state.tags, note: state.note,
+        meals: state.meals, exercises: state.exercises,
+      };
+      const res = await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'save failed');
+      statusEl.textContent = '저장됨 · ' + new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+      loadRealHistory();
+    } catch (err) {
+      statusEl.textContent = '저장 실패 — 다시 시도해주세요';
+      console.warn('구글시트 저장 실패', err);
+    }
+  }
+  $('#syncBtn').addEventListener('click', syncToSheets);
+
   render();
+  loadRealHistory();
 })();
 </script>
 </body>
