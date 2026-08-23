@@ -344,6 +344,17 @@
   .chip:hover { border-color: var(--accent); color: var(--accent-ink); }
   .chip.tag-selected { background: var(--accent); border-style: solid; border-color: var(--accent); color: #fff; }
 
+  .chip-wrap { display: inline-flex; align-items: center; gap: 2px; margin: 0 6px 10px 0; }
+  .chip-wrap .chip { margin: 0; }
+  .fav-del {
+    width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink-faint); cursor: pointer; font-size: 11px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .fav-del:hover { color: var(--bad); border-color: var(--bad); }
+
+  .manual-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
   .pending-add {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     background: var(--accent-soft); border-radius: var(--radius-m);
@@ -771,6 +782,20 @@
     $$('#morningFields input').forEach(i => i.disabled = true);
   }
 
+  // ---------- 내가 직접 만든 즐겨찾기 (날짜와 무관하게 계속 유지) ----------
+  const CUSTOM_FAV_KEY = 'dietTracker:customFavorites';
+  let customFavorites = [];
+  try {
+    const savedFav = localStorage.getItem(CUSTOM_FAV_KEY);
+    if (savedFav) customFavorites = JSON.parse(savedFav);
+  } catch (e) { /* localStorage 사용 불가 시 조용히 무시 */ }
+  function saveCustomFavorites() {
+    try { localStorage.setItem(CUSTOM_FAV_KEY, JSON.stringify(customFavorites)); } catch (e) {}
+  }
+  function findFood(label) {
+    return FOOD_DB.find(f => f.label === label) || customFavorites.find(f => f.label === label);
+  }
+
   // ---------- meal cards (all visible at once) ----------
   const mealGrid = $('#mealGrid');
   MEALS.forEach(meal => {
@@ -806,14 +831,24 @@
             <input type="number" class="m-fat" placeholder="지방(g)" min="0">
             <input type="number" class="m-sugar" placeholder="단순당(g)" min="0">
           </div>
-          <button type="button" class="btn small add-manual-btn">이 끼니에 추가 (kcal 자동계산)</button>
+          <div class="manual-btn-row">
+            <button type="button" class="btn small add-manual-btn">이 끼니에 추가 (kcal 자동계산)</button>
+            <button type="button" class="btn small subtle add-manual-fav-btn">⭐ 즐겨찾기에 저장</button>
+          </div>
         </div>
       </details>
       <table class="food-table"><tbody class="items-body"></tbody></table>
     `;
-    const favRow = card.querySelector('.fav-row');
+    mealGrid.appendChild(card);
+    renderFavRow(card);
+  });
+
+  function renderFavRow(cardEl) {
+    const favRow = cardEl.querySelector('.fav-row');
+    favRow.innerHTML = '';
     FAVORITES.forEach(label => {
       const food = FOOD_DB.find(f => f.label === label);
+      if (!food) return;
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'chip';
@@ -821,8 +856,16 @@
       chip.textContent = '+ ' + foodDisplayBase(food);
       favRow.appendChild(chip);
     });
-    mealGrid.appendChild(card);
-  });
+    customFavorites.forEach(food => {
+      const wrap = document.createElement('span');
+      wrap.className = 'chip-wrap';
+      wrap.innerHTML = `<button type="button" class="chip" data-food="${food.label}">+ ${food.label} (${food.kcal}kcal)</button><button type="button" class="fav-del" data-food="${food.label}" aria-label="즐겨찾기 삭제">×</button>`;
+      favRow.appendChild(wrap);
+    });
+  }
+  function renderAllFavRows() {
+    $$('.meal-card', mealGrid).forEach(renderFavRow);
+  }
 
   function addScaledFoodToMeal(meal, food, qty) {
     const scale = qty / food.baseAmount;
@@ -852,6 +895,21 @@
     render();
   }
 
+  function readManualForm_(cardEl) {
+    const name = cardEl.querySelector('.m-name').value.trim();
+    if (!name) { cardEl.querySelector('.m-name').focus(); return null; }
+    const carb = parseFloat(cardEl.querySelector('.m-carb').value) || 0;
+    const prot = parseFloat(cardEl.querySelector('.m-prot').value) || 0;
+    const fat = parseFloat(cardEl.querySelector('.m-fat').value) || 0;
+    const sugar = parseFloat(cardEl.querySelector('.m-sugar').value) || 0;
+    const kcal = Math.round(carb * 4 + prot * 4 + fat * 9);
+    return { name, carb, prot, fat, sugar, kcal };
+  }
+  function clearManualForm_(cardEl) {
+    cardEl.querySelector('.m-name').value = '';
+    ['.m-carb','.m-prot','.m-fat','.m-sugar'].forEach(sel => cardEl.querySelector(sel).value = '');
+  }
+
   function openPendingAdd(cardEl, food) {
     cardEl.pendingFood = food;
     const pending = cardEl.querySelector('.pending-add');
@@ -866,10 +924,18 @@
 
   // favorite chip / search result / pending-add / manual-add / remove clicks
   mealGrid.addEventListener('click', (e) => {
+    const favDelBtn = e.target.closest('.fav-del');
+    if (favDelBtn) {
+      const label = favDelBtn.dataset.food;
+      customFavorites = customFavorites.filter(f => f.label !== label);
+      saveCustomFavorites();
+      renderAllFavRows();
+      return;
+    }
     const favBtn = e.target.closest('.fav-row .chip');
     if (favBtn) {
       const cardEl = favBtn.closest('.meal-card');
-      const food = FOOD_DB.find(f => f.label === favBtn.dataset.food);
+      const food = findFood(favBtn.dataset.food);
       if (food) openPendingAdd(cardEl, food);
       return;
     }
@@ -900,21 +966,27 @@
     if (manualBtn) {
       const cardEl = manualBtn.closest('.meal-card');
       const meal = cardEl.dataset.meal;
-      const name = cardEl.querySelector('.m-name').value.trim();
-      const carb = parseFloat(cardEl.querySelector('.m-carb').value) || 0;
-      const prot = parseFloat(cardEl.querySelector('.m-prot').value) || 0;
-      const fat = parseFloat(cardEl.querySelector('.m-fat').value) || 0;
-      const sugar = parseFloat(cardEl.querySelector('.m-sugar').value) || 0;
-      if (!name) { cardEl.querySelector('.m-name').focus(); return; }
-      const kcal = Math.round(carb * 4 + prot * 4 + fat * 9);
+      const m = readManualForm_(cardEl);
+      if (!m) return;
       state.meals[meal].push({
-        label: name, qty: 1, unitLabel: '회',
-        perCarb: carb, perProt: prot, perFat: fat, perSugar: sugar, perKcal: kcal,
-        name, carb, prot, fat, sugar, kcal,
+        label: m.name, qty: 1, unitLabel: '회',
+        perCarb: m.carb, perProt: m.prot, perFat: m.fat, perSugar: m.sugar, perKcal: m.kcal,
+        name: m.name, carb: m.carb, prot: m.prot, fat: m.fat, sugar: m.sugar, kcal: m.kcal,
       });
-      cardEl.querySelector('.m-name').value = '';
-      ['.m-carb','.m-prot','.m-fat','.m-sugar'].forEach(sel => cardEl.querySelector(sel).value = '');
+      clearManualForm_(cardEl);
       render();
+      return;
+    }
+    const manualFavBtn = e.target.closest('.add-manual-fav-btn');
+    if (manualFavBtn) {
+      const cardEl = manualFavBtn.closest('.meal-card');
+      const m = readManualForm_(cardEl);
+      if (!m) return;
+      customFavorites = customFavorites.filter(f => f.label !== m.name);
+      customFavorites.push({ label: m.name, type:'count', unitLabel:'회', baseAmount:1, carb: m.carb, prot: m.prot, fat: m.fat, sugar: m.sugar, kcal: m.kcal });
+      saveCustomFavorites();
+      renderAllFavRows();
+      clearManualForm_(cardEl);
       return;
     }
     const rmBtn = e.target.closest('td.rm button');
