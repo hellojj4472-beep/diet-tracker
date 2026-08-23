@@ -363,6 +363,9 @@
   table.food-table th { text-align: left; font-size: 10.5px; color: var(--ink-faint); font-weight: 400; padding: 4px; border-bottom: 1px solid var(--line); }
   table.food-table td { padding: 6px 4px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
   table.food-table td.name { font-variant-numeric: normal; }
+  .qty-edit { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+  .qty-edit .item-qty { width: 56px; padding: 4px 5px; font-size: 12px; }
+  .qty-edit .unit-label { font-size: 11.5px; color: var(--ink-faint); }
   table.food-table tr:last-child td { border-bottom: none; }
   table.food-table td.rm button { background:none; border:none; color: var(--ink-faint); cursor:pointer; font-size: 15px; line-height:1; padding: 0 2px; }
   table.food-table td.rm button:hover { color: var(--bad); }
@@ -798,11 +801,28 @@
   function addScaledFoodToMeal(meal, food, qty) {
     const scale = qty / food.baseAmount;
     state.meals[meal].push({
+      label: food.label, qty, unitLabel: food.unitLabel,
+      perCarb: food.carb / food.baseAmount, perProt: food.prot / food.baseAmount,
+      perFat: food.fat / food.baseAmount, perSugar: food.sugar / food.baseAmount,
+      perKcal: food.kcal / food.baseAmount,
       name: `${food.label} ${qty}${food.unitLabel}`,
       carb: round1(food.carb * scale), prot: round1(food.prot * scale),
       fat: round1(food.fat * scale), sugar: round1(food.sugar * scale),
       kcal: Math.round(food.kcal * scale),
     });
+    render();
+  }
+
+  function updateItemQty(meal, idx, newQty) {
+    const item = state.meals[meal][idx];
+    if (!item || !(newQty > 0)) return;
+    item.qty = newQty;
+    item.carb = round1(item.perCarb * newQty);
+    item.prot = round1(item.perProt * newQty);
+    item.fat = round1(item.perFat * newQty);
+    item.sugar = round1(item.perSugar * newQty);
+    item.kcal = Math.round(item.perKcal * newQty);
+    item.name = `${item.label} ${newQty}${item.unitLabel}`;
     render();
   }
 
@@ -861,7 +881,11 @@
       const sugar = parseFloat(cardEl.querySelector('.m-sugar').value) || 0;
       if (!name) { cardEl.querySelector('.m-name').focus(); return; }
       const kcal = Math.round(carb * 4 + prot * 4 + fat * 9);
-      state.meals[meal].push({ name, carb, prot, fat, sugar, kcal });
+      state.meals[meal].push({
+        label: name, qty: 1, unitLabel: '회',
+        perCarb: carb, perProt: prot, perFat: fat, perSugar: sugar, perKcal: kcal,
+        name, carb, prot, fat, sugar, kcal,
+      });
       cardEl.querySelector('.m-name').value = '';
       ['.m-carb','.m-prot','.m-fat','.m-sugar'].forEach(sel => cardEl.querySelector(sel).value = '');
       render();
@@ -900,18 +924,34 @@
     }
   });
 
+  // 이미 추가된 항목의 수량 조절 (blur/Enter 시점에 반영 — 타이핑 중 재렌더로 포커스 잃는 것 방지)
+  mealGrid.addEventListener('change', (e) => {
+    if (!e.target.classList.contains('item-qty')) return;
+    const cardEl = e.target.closest('.meal-card');
+    const meal = cardEl.dataset.meal;
+    const idx = parseInt(e.target.dataset.idx);
+    updateItemQty(meal, idx, parseFloat(e.target.value));
+  });
+
   function renderMealCards() {
     MEALS.forEach(meal => {
       const cardEl = mealGrid.querySelector(`.meal-card[data-meal="${meal}"]`);
       const items = state.meals[meal];
       const body = cardEl.querySelector('.items-body');
       body.innerHTML = items.length
-        ? items.map((it, idx) => `
+        ? items.map((it, idx) => {
+            const editable = it.perKcal !== undefined;
+            const step = it.unitLabel === 'g' || it.unitLabel === 'ml' ? 10 : 1;
+            return `
             <tr>
-              <td class="name">${it.name}</td>
+              <td class="name">
+                ${it.label || it.name}
+                ${editable ? `<div class="qty-edit"><input type="number" class="item-qty" data-idx="${idx}" value="${it.qty}" min="0.1" step="${step}"><span class="unit-label">${it.unitLabel}</span></div>` : ''}
+              </td>
               <td>${it.kcal}kcal</td>
               <td class="rm"><button type="button" data-idx="${idx}" aria-label="삭제">×</button></td>
-            </tr>`).join('')
+            </tr>`;
+          }).join('')
         : '<tr><td class="empty-row" colspan="3">아직 추가된 음식이 없어요</td></tr>';
       const sub = sumMacros(items);
       cardEl.querySelector('[data-role="subtotal"]').textContent = sub.kcal + ' kcal';
