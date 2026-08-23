@@ -534,9 +534,10 @@
     <textarea id="noteInput" placeholder="오늘의 컨디션, 생리주기, 특별한 일정 등을 자유롭게 적어보세요."></textarea>
   </section>
 
-  <p class="proto-note">오늘 입력은 이 브라우저에 자동 저장돼요. 위 "☁️ 구글시트에 저장" 버튼을 누르면 구글시트에도 백업되고, 추이 그래프에 실제 기록이 반영돼요. 외부 식품 API 연동은 다음 단계에서 붙일 예정입니다.</p>
+  <p class="proto-note">오늘 입력은 이 브라우저에 자동 저장돼요. 위 "☁️ 구글시트에 저장" 버튼을 누르면 구글시트에도 백업되고, 추이 그래프에 실제 기록이 반영돼요. 음식 검색은 식약처 식품영양성분DB 표준데이터 기반이에요.</p>
 </div>
 
+<script src="foods-real.js"></script>
 <script>
 (function () {
   const $ = (sel, root=document) => root.querySelector(sel);
@@ -555,7 +556,7 @@
 
   // ---------- data ----------
   // type:'weight' → baseAmount는 g/ml 기준량, type:'count' → baseAmount는 항상 1(단위: 개/공기/인분 등)
-  const FOOD_DB = [
+  const CURATED_FOOD_DB = [
     { label:'현미밥', type:'count', unitLabel:'공기', baseAmount:1, carb:73, prot:5, fat:2, sugar:0, kcal:332 },
     { label:'흰쌀밥', type:'count', unitLabel:'공기', baseAmount:1, carb:69, prot:5, fat:1, sugar:0, kcal:310 },
     { label:'잡곡밥', type:'count', unitLabel:'공기', baseAmount:1, carb:70, prot:6, fat:2, sugar:1, kcal:320 },
@@ -645,6 +646,13 @@
     { label:'메추리알장조림', type:'count', unitLabel:'접시', baseAmount:1, carb:5, prot:8, fat:5, sugar:4, kcal:100 },
     { label:'소시지볶음', type:'count', unitLabel:'접시', baseAmount:1, carb:8, prot:9, fat:14, sugar:5, kcal:195 },
   ];
+
+  // 식약처 공식 식품영양성분DB(음식) 표준데이터에서 뽑은 항목과 합치기 — 이름이 겹치면 위 손질된 항목을 우선
+  const _curatedLabels = new Set(CURATED_FOOD_DB.map(f => f.label));
+  const FOOD_DB = CURATED_FOOD_DB.concat(
+    (typeof REAL_FOOD_DB !== 'undefined' ? REAL_FOOD_DB : []).filter(f => !_curatedLabels.has(f.label))
+  );
+
   const FAVORITES = ['현미밥','닭가슴살(구운)','계란후라이','그릭요거트','두부'];
   const MEALS = ['아침','점심','간식','저녁'];
 
@@ -744,7 +752,7 @@
         <span class="meal-subtotal" data-role="subtotal">0 kcal</span>
       </div>
       <div class="search-box">
-        <label>음식 검색 (외부 API 자동조회 · 프로토타입 샘플 ${FOOD_DB.length}종)</label>
+        <label>음식 검색 (식약처 식품영양성분DB 기반 · ${FOOD_DB.length}종)</label>
         <input type="text" class="food-search" placeholder="예: 닭가슴살, 현미밥, 라면…" autocomplete="off">
         <div class="search-results" style="display:none;"></div>
       </div>
@@ -872,13 +880,14 @@
     const resultsEl = cardEl.querySelector('.search-results');
     const q = e.target.value.trim();
     if (!q) { resultsEl.style.display = 'none'; return; }
-    const matches = FOOD_DB.filter(f => f.label.includes(q));
+    const allMatches = FOOD_DB.filter(f => f.label.includes(q));
+    const matches = allMatches.slice(0, 25);
     if (!matches.length) {
       resultsEl.innerHTML = '<div class="empty-row">검색 결과 없음 — 직접 입력을 이용해보세요</div>';
     } else {
       resultsEl.innerHTML = matches.map(f =>
         `<button type="button" data-food="${f.label}"><span>${foodDisplayBase(f)}</span><span class="macro">${f.kcal}kcal · 탄${f.carb} 단${f.prot} 지${f.fat}</span></button>`
-      ).join('');
+      ).join('') + (allMatches.length > matches.length ? `<div class="empty-row">${allMatches.length - matches.length}개 더 있어요 · 좀 더 구체적으로 입력해보세요</div>` : '');
     }
     resultsEl.style.display = 'block';
   });
