@@ -27,6 +27,7 @@
     --warn-soft: #F1E4CC;
     --bad: #B23F32;
     --bad-soft: #F3DFDA;
+    --plan: #6B5FA8;
     --radius-s: 8px;
     --radius-m: 14px;
     --radius-l: 20px;
@@ -52,6 +53,7 @@
       --warn-soft: #3A2E1B;
       --bad: #E2897A;
       --bad-soft: #3A211D;
+      --plan: #B3A6E8;
       color-scheme: dark;
     }
   }
@@ -73,6 +75,7 @@
     --warn-soft: #3A2E1B;
     --bad: #E2897A;
     --bad-soft: #3A211D;
+    --plan: #B3A6E8;
     color-scheme: dark;
   }
 
@@ -230,11 +233,13 @@
   .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
   .cal-dot.good { background: var(--good); }
   .cal-dot.warn { background: var(--warn); }
+  .cal-dot.plan { background: var(--plan); }
   .cal-dot.note { background: var(--accent); }
   .cal-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin-top: 12px; flex-wrap: wrap; align-items: center; }
   .cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
   .cal-legend .dot.good { background: var(--good); }
   .cal-legend .dot.warn { background: var(--warn); }
+  .cal-legend .dot.plan { background: var(--plan); }
   .cal-legend .dot.note { background: var(--accent); }
 
   /* ---------- recommendation banner ---------- */
@@ -470,7 +475,8 @@
       <div class="cal-legend">
         <span><i class="dot good"></i>배변</span>
         <span><i class="dot warn"></i>운동</span>
-        <span><i class="dot note"></i>메모/일정</span>
+        <span><i class="dot plan"></i>일정</span>
+        <span><i class="dot note"></i>메모</span>
         <span>· 체중은 숫자로 표시돼요</span>
       </div>
     </div>
@@ -546,7 +552,7 @@
   </section>
 
   <section class="card" id="etcCard">
-    <div class="section-head"><h2 style="margin:0;">수면 · 배변 · 특이사항</h2></div>
+    <div class="section-head"><h2 style="margin:0;">수면 · 배변 · 일정 · 특이사항</h2></div>
     <div class="field-row" style="grid-template-columns: 1fr; margin-bottom:16px;">
       <div>
         <label for="sleepInput">수면시간 (시간)</label>
@@ -560,11 +566,14 @@
       <button id="bowelNo" type="button">배변 안 함</button>
     </div>
 
+    <label for="scheduleInput">오늘 일정</label>
+    <input type="text" id="scheduleInput" placeholder="예: 오후 3시 병원, 저녁 약속" style="margin-bottom:18px;">
+
     <label>특이사항 태그</label>
     <div class="chip-row" id="tagRow"></div>
 
     <label for="noteInput">자유 메모</label>
-    <textarea id="noteInput" placeholder="오늘의 컨디션, 생리주기, 특별한 일정 등을 자유롭게 적어보세요."></textarea>
+    <textarea id="noteInput" placeholder="오늘의 컨디션, 생리주기 등을 자유롭게 적어보세요."></textarea>
   </section>
 
   <p class="proto-note">오늘 입력은 이 브라우저에 자동 저장돼요. 위 "☁️ 구글시트에 저장" 버튼을 누르면 구글시트에도 백업되고, 추이 그래프에 실제 기록이 반영돼요. 음식 검색은 식약처 식품영양성분DB 표준데이터 기반이에요.</p>
@@ -721,6 +730,7 @@
     exercises: [],
     sleep: null,
     bowel: null,
+    schedule: '',
     tags: [],
     note: '',
   };
@@ -1109,6 +1119,8 @@
   });
   $('#bowelYes').addEventListener('click', () => { state.bowel = true; render(); });
   $('#bowelNo').addEventListener('click', () => { state.bowel = false; render(); });
+  $('#scheduleInput').value = state.schedule || '';
+  $('#scheduleInput').addEventListener('input', (e) => { state.schedule = e.target.value; saveState(); });
   function renderBowel() {
     $('#bowelYes').classList.toggle('on', state.bowel === true);
     $('#bowelNo').classList.toggle('on', state.bowel === false);
@@ -1185,6 +1197,7 @@
     if (state.bowel !== null) todayRec.bowel = state.bowel === true ? '배변함' : '배변안함';
     if (todayBurn) todayRec.burn = todayBurn;
     if (state.note) todayRec.note = state.note;
+    if (state.schedule) todayRec.schedule = state.schedule;
     byDate[todayISO] = todayRec;
 
     let html = '';
@@ -1201,7 +1214,8 @@
         const badges = [];
         if (rec.bowel === '배변함') badges.push('<span class="cal-dot good" title="배변함"></span>');
         if (rec.burn) badges.push(`<span class="cal-dot warn" title="운동 ${rec.burn}kcal"></span>`);
-        if (rec.note) badges.push(`<span class="cal-dot note" title="${escAttr_(rec.note)}"></span>`);
+        if (rec.schedule) badges.push(`<span class="cal-dot plan" title="일정: ${escAttr_(rec.schedule)}"></span>`);
+        if (rec.note) badges.push(`<span class="cal-dot note" title="메모: ${escAttr_(rec.note)}"></span>`);
         if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
       }
       html += `<div class="cal-cell${isToday ? ' today' : ''}">${inner}</div>`;
@@ -1280,7 +1294,7 @@
         weight: state.weight, waist: state.waist, thigh: state.thigh, hip: state.hip,
         skipMeasure: state.skipMeasure,
         kcal: day.kcal, carb: day.carb, prot: day.prot, fat: day.fat, sugar: day.sugar,
-        burn, net, sleep: state.sleep, bowel: state.bowel, tags: state.tags, note: state.note,
+        burn, net, sleep: state.sleep, bowel: state.bowel, schedule: state.schedule, tags: state.tags, note: state.note,
         meals: state.meals, exercises: state.exercises,
       };
       const res = await fetch(SHEETS_URL, {

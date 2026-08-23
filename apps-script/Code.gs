@@ -4,7 +4,7 @@
 var SHEET_NAME = '기록';
 var TOKEN = '여기에-원하는-비밀번호처럼-긴-문자열을-넣으세요'; // 예: diet-8x3kQ9zL2m
 
-var HEADERS = ['날짜','체중','허리둘레','허벅지둘레','골반둘레','측정건너뜀','섭취칼로리','탄수화물','단백질','지방','단순당','운동소모칼로리','순섭취칼로리','수면시간','배변','특이사항태그','메모','식사상세JSON','운동상세JSON'];
+var HEADERS = ['날짜','체중','허리둘레','허벅지둘레','골반둘레','측정건너뜀','섭취칼로리','탄수화물','단백질','지방','단순당','운동소모칼로리','순섭취칼로리','수면시간','배변','특이사항태그','메모','식사상세JSON','운동상세JSON','일정'];
 
 function getSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -32,7 +32,7 @@ function rowToObject_(r) {
   return {
     date: r[0], weight: r[1], waist: r[2], thigh: r[3], hip: r[4], skipMeasure: r[5],
     kcal: r[6], carb: r[7], prot: r[8], fat: r[9], sugar: r[10], burn: r[11], net: r[12],
-    sleep: r[13], bowel: r[14], tags: r[15], note: r[16]
+    sleep: r[13], bowel: r[14], tags: r[15], note: r[16], schedule: r[19]
   };
 }
 
@@ -81,7 +81,8 @@ function doPost(e) {
       (payload.tags || []).join(','),
       payload.note || '',
       JSON.stringify(payload.meals || {}),
-      JSON.stringify(payload.exercises || [])
+      JSON.stringify(payload.exercises || []),
+      payload.schedule || ''
     ];
     if (rowIndex === -1) {
       sheet.appendRow(row);
