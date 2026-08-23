@@ -319,6 +319,7 @@
   .meal-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .meal-card-head h3 { font-size: 15px; margin: 0; }
   .meal-card-head .meal-subtotal { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--accent-ink); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; }
+  .meal-macro-line { font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; margin: -6px 0 12px; }
 
   .search-box { position: relative; margin-bottom: 10px; }
   .search-results {
@@ -771,6 +772,7 @@
         <h3>${meal}</h3>
         <span class="meal-subtotal" data-role="subtotal">0 kcal</span>
       </div>
+      <div class="meal-macro-line" data-role="macroline">탄0 · 단0 · 지0 · 당0 (g)</div>
       <div class="search-box">
         <label>음식 검색 (식약처 식품영양성분DB 기반 · ${FOOD_DB.length}종)</label>
         <input type="text" class="food-search" placeholder="예: 닭가슴살, 현미밥, 라면…" autocomplete="off">
@@ -972,6 +974,7 @@
         : '<tr><td class="empty-row" colspan="3">아직 추가된 음식이 없어요</td></tr>';
       const sub = sumMacros(items);
       cardEl.querySelector('[data-role="subtotal"]').textContent = sub.kcal + ' kcal';
+      cardEl.querySelector('[data-role="macroline"]').textContent = `탄${sub.carb} · 단${sub.prot} · 지${sub.fat} · 당${sub.sugar} (g)`;
     });
   }
 
