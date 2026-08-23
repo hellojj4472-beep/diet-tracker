@@ -29,10 +29,11 @@ function jsonOutput_(obj) {
 }
 
 function formatDate_(v) {
-  if (v instanceof Date) {
+  try {
     return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  } catch (e) {
+    return String(v);
   }
-  return String(v);
 }
 
 function rowToObject_(r) {
