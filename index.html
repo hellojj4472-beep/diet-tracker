@@ -562,8 +562,11 @@
   .macro-cell .kcal-val { font-weight: 700; }
   .macro-cell .macro-mini { font-size: 10.5px; color: var(--ink-faint); margin-top: 2px; }
   table.food-table tr:last-child td { border-bottom: none; }
+  table.food-table td.rm { display: flex; align-items: center; gap: 6px; justify-content: flex-end; border-bottom: 1px solid var(--line); }
   table.food-table td.rm button { background:none; border:none; color: var(--ink-faint); cursor:pointer; font-size: 15px; line-height:1; padding: 0 2px; }
-  table.food-table td.rm button:hover { color: var(--bad); }
+  table.food-table td.rm button.item-fav-btn { font-size: 13px; opacity: 0.6; }
+  table.food-table td.rm button.item-fav-btn:hover { opacity: 1; }
+  table.food-table td.rm button.item-del-btn:hover { color: var(--bad); }
   .empty-row { color: var(--ink-faint); font-size: 12.5px; padding: 8px 4px; }
 
   .day-total {
@@ -886,6 +889,7 @@
     { label:'카페라떼', type:'count', unitLabel:'잔', baseAmount:1, carb:10, prot:6, fat:6, sugar:9, kcal:130 },
     { label:'탄산음료', type:'count', unitLabel:'캔', baseAmount:1, carb:27, prot:0, fat:0, sugar:27, kcal:105 },
     { label:'두유', type:'weight', unitLabel:'ml', baseAmount:200, carb:11, prot:7, fat:4, sugar:7, kcal:110 },
+    { label:'코코넛밀크', type:'weight', unitLabel:'ml', baseAmount:200, carb:1, prot:0, fat:4, sugar:0, kcal:38 },
     { label:'아이스크림', type:'count', unitLabel:'컵', baseAmount:1, carb:24, prot:4, fat:11, sugar:22, kcal:207 },
     { label:'초콜릿', type:'weight', unitLabel:'g', baseAmount:30, carb:18, prot:2, fat:9, sugar:16, kcal:165 },
     { label:'견과류', type:'weight', unitLabel:'g', baseAmount:30, carb:6, prot:6, fat:15, sugar:1, kcal:180 },
@@ -1249,7 +1253,27 @@
       clearManualForm_(cardEl);
       return;
     }
-    const rmBtn = e.target.closest('td.rm button');
+    const itemFavBtn = e.target.closest('.item-fav-btn');
+    if (itemFavBtn) {
+      const meal = itemFavBtn.closest('.meal-card').dataset.meal;
+      const it = state.meals[meal][parseInt(itemFavBtn.dataset.idx)];
+      if (it) {
+        const label = it.label || it.name;
+        customFavorites = customFavorites.filter(f => f.label !== label);
+        customFavorites.push({
+          label, type: (it.unitLabel === 'g' || it.unitLabel === 'ml') ? 'weight' : 'count',
+          unitLabel: it.unitLabel, baseAmount: 1,
+          carb: round1(it.perCarb), prot: round1(it.perProt), fat: round1(it.perFat),
+          sugar: round1(it.perSugar), kcal: Math.round(it.perKcal),
+        });
+        saveCustomFavorites();
+        renderAllFavRows();
+        itemFavBtn.textContent = '✅';
+        setTimeout(() => { itemFavBtn.textContent = '⭐'; }, 1200);
+      }
+      return;
+    }
+    const rmBtn = e.target.closest('.item-del-btn');
     if (rmBtn) {
       const meal = rmBtn.closest('.meal-card').dataset.meal;
       state.meals[meal].splice(parseInt(rmBtn.dataset.idx), 1);
@@ -1310,7 +1334,10 @@
                 <div class="kcal-val">${it.kcal}kcal</div>
                 <div class="macro-mini">탄수화물${it.carb} 단백질${it.prot} 지방${it.fat} 단순당${it.sugar}</div>
               </td>
-              <td class="rm"><button type="button" data-idx="${idx}" aria-label="삭제">×</button></td>
+              <td class="rm">
+                <button type="button" class="item-fav-btn" data-idx="${idx}" aria-label="즐겨찾기에 저장" title="즐겨찾기에 저장">⭐</button>
+                <button type="button" class="item-del-btn" data-idx="${idx}" aria-label="삭제">×</button>
+              </td>
             </tr>`;
           }).join('')
         : '<tr><td class="empty-row" colspan="3">아직 추가된 음식이 없어요</td></tr>';
