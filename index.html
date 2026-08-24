@@ -1634,6 +1634,10 @@
   }
   function renderEmojiRow_(rowId, getTargetInput) {
     $(rowId).innerHTML = SCHEDULE_EMOJIS.map(e => `<button type="button" class="emoji-pick-btn">${e}</button>`).join('');
+    // mousedown에서 막아줘야 수정중인 입력칸이 blur로 먼저 사라지는 걸 방지할 수 있어요
+    $(rowId).addEventListener('mousedown', (e) => {
+      if (e.target.closest('.emoji-pick-btn')) e.preventDefault();
+    });
     $(rowId).addEventListener('click', (e) => {
       const btn = e.target.closest('.emoji-pick-btn');
       if (!btn) return;
