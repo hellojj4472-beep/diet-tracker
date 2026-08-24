@@ -267,9 +267,10 @@
   .quick-fill-label { font-size: 13px; color: var(--accent-ink); white-space: nowrap; }
   .quick-fill-label b { font-variant-numeric: tabular-nums; }
 
-  .cal-cell.period { box-shadow: inset 3px 0 0 var(--period-pink); }
-  .cal-cell.ovulation { box-shadow: inset 3px 0 0 var(--ovulation-purple); }
-  .cal-cell.period.ovulation { box-shadow: inset 3px 0 0 var(--period-pink), inset -3px 0 0 var(--ovulation-purple); }
+  .cal-cell.period { box-shadow: inset 0 0 0 2px var(--period-pink); }
+  .cal-cell.ovulation { box-shadow: inset 0 0 0 2px var(--ovulation-purple); }
+  .cal-cell.period.ovulation { box-shadow: inset 0 0 0 2px var(--period-pink); }
+  .cal-cell.holiday { box-shadow: inset 0 0 0 2px var(--bad); }
 
   .day-modal-period { margin-bottom: 12px; }
   .period-toggle-btn {
@@ -623,6 +624,10 @@
             <span class="recurring-label">부터</span>
             <input type="number" id="recurIntervalWeeks" min="1" value="2">
             <span class="recurring-label">주마다</span>
+          </span>
+          <span id="recurStartDateGeneralWrap" class="recurring-interval-fields">
+            <span class="recurring-label">시작일(선택)</span>
+            <input type="date" id="recurStartDateGeneral">
           </span>
           <span class="recurring-label">종료일(선택)</span>
           <input type="date" id="recurEndDate">
@@ -1426,9 +1431,10 @@
   }
 
   function ruleMatchesDate_(r, dateObj) {
-    if (r.endDate) {
+    if (r.startDate || r.endDate) {
       const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-      if (dStr > r.endDate) return false;
+      if (r.startDate && dStr < r.startDate) return false;
+      if (r.endDate && dStr > r.endDate) return false;
     }
     const dow = dateObj.getDay(), dom = dateObj.getDate();
     if (r.type === 'weekly') return r.dow === dow;
@@ -1568,6 +1574,7 @@
       if (r.type === 'weekly') label = `매주 ${DOW_NAMES[r.dow]}요일`;
       else if (r.type === 'monthly') label = `매달 ${r.day}일`;
       else label = `${r.startDate}부터 ${r.intervalWeeks}주마다`;
+      if (r.type !== 'interval' && r.startDate) label = `${r.startDate}부터 ` + label;
       if (r.endDate) label += ` (~${r.endDate})`;
       const desc = r.isWork ? `근무(${escAttr_(r.text)})` : escAttr_(r.text);
       return `<div class="recurring-item"><span>${label} · ${desc}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
@@ -1593,6 +1600,7 @@
     const type = $('#recurType').value;
     $('#recurValue').style.display = (type === 'interval') ? 'none' : '';
     $('#recurIntervalFields').style.display = (type === 'interval') ? 'inline-flex' : 'none';
+    $('#recurStartDateGeneralWrap').style.display = (type === 'interval') ? 'none' : 'inline-flex';
     if (type !== 'interval') populateRecurValueOptions_();
   }
   $('#recurType').addEventListener('change', updateRecurTypeUI_);
@@ -1634,11 +1642,15 @@
       recurringSchedules.push(Object.assign({ id, type, startDate, intervalWeeks, text }, workFields));
     } else {
       const value = parseInt($('#recurValue').value);
-      recurringSchedules.push(Object.assign(type === 'weekly' ? { id, type, dow: value, text } : { id, type, day: value, text }, workFields));
+      const generalStartDate = $('#recurStartDateGeneral').value || undefined;
+      const rule = type === 'weekly' ? { id, type, dow: value, text } : { id, type, day: value, text };
+      if (generalStartDate) rule.startDate = generalStartDate;
+      recurringSchedules.push(Object.assign(rule, workFields));
     }
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
     $('#recurEndDate').value = '';
+    $('#recurStartDateGeneral').value = '';
     selectedRecurWorkCode = null;
     $$('.work-pick-btn', $('#recurWorkPicker')).forEach(b => b.classList.remove('active'));
   });
@@ -1690,8 +1702,9 @@
       const isPeriodDay = periodDates.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
       const isWorkDay = !!getWorkForDate_(dateStr, dayDateObj) && getWorkForDate_(dateStr, dayDateObj) !== 'off';
+      const isHoliday = !!KR_HOLIDAYS[dateStr];
       const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
-      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '');
+      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isHoliday ? ' holiday' : '');
       html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
