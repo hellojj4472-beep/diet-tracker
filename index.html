@@ -1622,7 +1622,7 @@
   // ---------- 일정 입력창에 바로 넣을 수 있는 이모지 버튼 ----------
   const SCHEDULE_EMOJIS = [
     '🏥','💊','🚗','✈️','🎂','📞','💇','🧾','🐾','🍽️','📚','💰','🎉','🏋️','📌','⭐',
-    '🏠','🛒','🧹','🎓','💼','🚌','🏦','📦','🎁','☕','🧑‍⚕️','🎗️','📷','🛏️','🚿','🗓️','❤️','🔔','✅','🚨'
+    '🏠','🛒','🧹','🎓','💼','🚌','🏦','📦','🎁','☕','🧑‍⚕️','🎗️','📷','🛏️','🚿','🗓️','❤️','🔔','✅','🚨','🐵'
   ];
   function insertAtCursor_(input, emoji) {
     // 이모지는 항상 맨 앞에 붙여줘요
@@ -1632,16 +1632,21 @@
     const pos = input.value.length;
     input.setSelectionRange(pos, pos);
   }
-  function renderEmojiRow_(rowId, inputId) {
+  function renderEmojiRow_(rowId, getTargetInput) {
     $(rowId).innerHTML = SCHEDULE_EMOJIS.map(e => `<button type="button" class="emoji-pick-btn">${e}</button>`).join('');
     $(rowId).addEventListener('click', (e) => {
       const btn = e.target.closest('.emoji-pick-btn');
       if (!btn) return;
-      insertAtCursor_($(inputId), btn.textContent);
+      insertAtCursor_(getTargetInput(), btn.textContent);
     });
   }
-  renderEmojiRow_('#dayModalEmojiRow', '#dayModalInput');
-  renderEmojiRow_('#recurEmojiRow', '#recurText');
+  // 일정 팝업 안에서는 마지막으로 포커스된 텍스트칸(추가 입력창 또는 기존 일정 수정칸)에 이모지가 붙어요
+  let dayModalActiveInput = null;
+  $('.day-modal').addEventListener('focusin', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'text') dayModalActiveInput = e.target;
+  });
+  renderEmojiRow_('#dayModalEmojiRow', () => dayModalActiveInput || $('#dayModalInput'));
+  renderEmojiRow_('#recurEmojiRow', () => $('#recurText'));
 
   let selectedRecurWorkCode = null;
   function renderRecurWorkPicker_() {
