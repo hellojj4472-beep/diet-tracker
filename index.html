@@ -43,6 +43,8 @@
     --love-red: #C93150;
     --work-day-bg: #E3EFCD;
     --work-e-bg: #F5D9E3;
+    --work-p-bg: #D6ECF7;
+    --work-p-ink: #1E7FA8;
     --radius-s: 8px;
     --radius-m: 14px;
     --radius-l: 20px;
@@ -76,6 +78,8 @@
       --love-red: #E8748C;
       --work-day-bg: #2E3A22;
       --work-e-bg: #3A2530;
+      --work-p-bg: #1F3A47;
+      --work-p-ink: #7CD2EF;
       color-scheme: dark;
     }
   }
@@ -105,6 +109,8 @@
     --love-red: #E8748C;
     --work-day-bg: #2E3A22;
     --work-e-bg: #3A2530;
+    --work-p-bg: #1F3A47;
+    --work-p-ink: #7CD2EF;
     color-scheme: dark;
   }
 
@@ -211,6 +217,7 @@
   .cal-cell.today:not(.work-day) { background: var(--accent-soft); }
   .cal-cell.work-day { background: var(--work-day-bg); }
   .cal-cell.work-e-day { background: var(--work-e-bg); }
+  .cal-cell.work-p-day { background: var(--work-p-bg); }
   .cal-cell-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; }
   .cal-day-num { font-size: 13.5px; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 3px; flex-wrap: wrap; }
   .cal-day-num.red-day, .cal-dow.red-day { color: var(--bad); }
@@ -296,6 +303,7 @@
   .work-badge.work-d_blue { color: var(--work-blue); }
   .work-badge.work-e { color: var(--period-pink); }
   .work-badge.work-conference { color: var(--accent-ink); }
+  .work-badge.work-p { color: var(--work-p-ink); }
   .work-badge.work-off { color: var(--ink-faint); }
 
   .day-modal-work { margin-bottom: 12px; }
@@ -308,11 +316,13 @@
   .work-pick-btn.work-d_blue { color: var(--work-blue); border-color: var(--work-blue); }
   .work-pick-btn.work-e { color: var(--period-pink); border-color: var(--period-pink); }
   .work-pick-btn.work-conference { color: var(--accent-ink); border-color: var(--accent); }
+  .work-pick-btn.work-p { color: var(--work-p-ink); border-color: var(--work-p-ink); }
   .work-pick-btn.work-off { color: var(--ink-faint); }
   .work-pick-btn.work-d_black.active { background: var(--ink); color: var(--paper); }
   .work-pick-btn.work-d_blue.active { background: var(--work-blue); color: #fff; }
   .work-pick-btn.work-e.active { background: var(--period-pink); color: #fff; }
   .work-pick-btn.work-conference.active { background: var(--accent); color: #fff; }
+  .work-pick-btn.work-p.active { background: var(--work-p-ink); color: #fff; }
   .work-pick-btn.work-off.active { background: var(--ink-faint); color: var(--paper); }
   .work-pick-btn.work-clear { color: var(--ink-faint); font-weight: 400; }
   .recur-work-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-soft); flex-shrink: 0; }
@@ -1518,10 +1528,11 @@
     d_blue: { label: 'D', cls: 'work-d_blue' },
     e: { label: 'E', cls: 'work-e' },
     conference: { label: '학회', cls: 'work-conference' },
+    p: { label: 'P', cls: 'work-p' },
     off: { label: '/', cls: 'work-off' },
   };
   const WORK_KEY = 'dietTracker:workShifts';
-  let workShifts = {}; // { 'yyyy-MM-dd': 'd_black'|'d_blue'|'conference'|'off' }
+  let workShifts = {}; // { 'yyyy-MM-dd': 'd_black'|'d_blue'|'e'|'conference'|'p'|'off' }
   try {
     const savedWork = localStorage.getItem(WORK_KEY);
     if (savedWork) workShifts = JSON.parse(savedWork);
@@ -1753,10 +1764,11 @@
       const isPeriodDay = periodDates.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
       const dayWorkCode = getWorkForDate_(dateStr, dayDateObj);
-      const isWorkDay = !!dayWorkCode && dayWorkCode !== 'off' && dayWorkCode !== 'e';
+      const isWorkDay = !!dayWorkCode && dayWorkCode !== 'off' && dayWorkCode !== 'e' && dayWorkCode !== 'p';
       const isEDay = dayWorkCode === 'e';
+      const isPDay = dayWorkCode === 'p';
       const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
-      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isEDay ? ' work-e-day' : '');
+      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isEDay ? ' work-e-day' : '') + (isPDay ? ' work-p-day' : '');
       html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
