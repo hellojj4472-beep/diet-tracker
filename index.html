@@ -215,6 +215,9 @@
   .recurring-add-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .recurring-add-row select { width: auto; flex-shrink: 0; }
   .recurring-add-row input { flex: 1; min-width: 140px; }
+  .recurring-interval-fields { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .recurring-interval-fields input[type="date"] { width: auto; flex: none; min-width: 0; }
+  .recurring-interval-fields input[type="number"] { width: 52px; flex: none; min-width: 0; text-align: center; }
   .recurring-label { font-size: 13px; color: var(--ink-soft); flex-shrink: 0; }
   .recurring-list { display: flex; flex-direction: column; gap: 6px; }
   .recurring-item {
@@ -456,9 +459,16 @@
           <select id="recurType">
             <option value="weekly">매주</option>
             <option value="monthly">매달</option>
+            <option value="interval">N주마다</option>
           </select>
           <select id="recurValue"></select>
-          <input type="text" id="recurText" placeholder="예: 요가 수업">
+          <span id="recurIntervalFields" class="recurring-interval-fields" style="display:none;">
+            <input type="date" id="recurStartDate">
+            <span class="recurring-label">부터</span>
+            <input type="number" id="recurIntervalWeeks" min="1" value="2">
+            <span class="recurring-label">주마다</span>
+          </span>
+          <input type="text" id="recurText" placeholder="예: 화분 물주기">
           <button type="button" class="btn small" id="recurAddBtn">추가</button>
         </div>
         <div class="recurring-list" id="recurringList"></div>
@@ -1173,14 +1183,27 @@
   }
   function recurringItemsForDate_(dateObj) {
     const dow = dateObj.getDay(), dom = dateObj.getDate();
-    return recurringSchedules.filter(r => (r.type === 'weekly' && r.dow === dow) || (r.type === 'monthly' && r.day === dom));
+    return recurringSchedules.filter(r => {
+      if (r.type === 'weekly') return r.dow === dow;
+      if (r.type === 'monthly') return r.day === dom;
+      if (r.type === 'interval') {
+        const start = new Date(r.startDate + 'T00:00:00');
+        const diffDays = Math.round((dateObj - start) / 86400000);
+        if (diffDays < 0) return false;
+        return diffDays % ((r.intervalWeeks || 1) * 7) === 0;
+      }
+      return false;
+    });
   }
   const DOW_NAMES = ['일','월','화','수','목','금','토'];
   function renderRecurringList() {
     const el = $('#recurringList');
     if (!recurringSchedules.length) { el.innerHTML = '<div class="empty-row">등록된 반복 일정이 없어요</div>'; return; }
     el.innerHTML = recurringSchedules.map((r, i) => {
-      const label = r.type === 'weekly' ? `매주 ${DOW_NAMES[r.dow]}요일` : `매달 ${r.day}일`;
+      let label;
+      if (r.type === 'weekly') label = `매주 ${DOW_NAMES[r.dow]}요일`;
+      else if (r.type === 'monthly') label = `매달 ${r.day}일`;
+      else label = `${r.startDate}부터 ${r.intervalWeeks}주마다`;
       return `<div class="recurring-item"><span>${label} · ${escAttr_(r.text)}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
     }).join('');
   }
@@ -1200,15 +1223,29 @@
       }
     }
   }
-  $('#recurType').addEventListener('change', populateRecurValueOptions_);
-  populateRecurValueOptions_();
+  function updateRecurTypeUI_() {
+    const type = $('#recurType').value;
+    $('#recurValue').style.display = (type === 'interval') ? 'none' : '';
+    $('#recurIntervalFields').style.display = (type === 'interval') ? 'inline-flex' : 'none';
+    if (type !== 'interval') populateRecurValueOptions_();
+  }
+  $('#recurType').addEventListener('change', updateRecurTypeUI_);
+  $('#recurStartDate').value = todayISO;
+  updateRecurTypeUI_();
 
   $('#recurAddBtn').addEventListener('click', () => {
     const text = $('#recurText').value.trim();
     if (!text) return;
     const type = $('#recurType').value;
-    const value = parseInt($('#recurValue').value);
-    recurringSchedules.push(type === 'weekly' ? { type, dow: value, text } : { type, day: value, text });
+    if (type === 'interval') {
+      const startDate = $('#recurStartDate').value;
+      const intervalWeeks = parseInt($('#recurIntervalWeeks').value) || 1;
+      if (!startDate) { $('#recurStartDate').focus(); return; }
+      recurringSchedules.push({ type, startDate, intervalWeeks, text });
+    } else {
+      const value = parseInt($('#recurValue').value);
+      recurringSchedules.push(type === 'weekly' ? { type, dow: value, text } : { type, day: value, text });
+    }
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
   });
