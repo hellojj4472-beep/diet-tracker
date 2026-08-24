@@ -1275,6 +1275,10 @@
 
   // ---------- exercise ----------
   const exSelect = $('#exSelect');
+  const exPlaceholder = document.createElement('option');
+  exPlaceholder.value = ''; exPlaceholder.textContent = '선택';
+  exPlaceholder.disabled = true; exPlaceholder.selected = true;
+  exSelect.appendChild(exPlaceholder);
   EXERCISES.forEach(ex => {
     const o = document.createElement('option');
     o.value = ex.met; o.textContent = `${ex.name} (MET ${ex.met})`;
@@ -1282,6 +1286,7 @@
     exSelect.appendChild(o);
   });
   $('#addExBtn').addEventListener('click', () => {
+    if (!exSelect.value) return;
     const met = parseFloat(exSelect.value);
     const name = exSelect.selectedOptions[0].dataset.name;
     const minutes = parseFloat($('#exMinutes').value) || 0;
