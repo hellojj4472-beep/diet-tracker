@@ -227,6 +227,16 @@
   }
   .cycle-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
 
+  .quick-fill-row { margin-bottom: 10px; }
+  .quick-fill-bar {
+    display: flex; flex-direction: column; gap: 10px; background: var(--accent-soft);
+    border-radius: var(--radius-m); padding: 12px 14px; margin-bottom: 14px;
+  }
+  .quick-fill-start, .quick-fill-cursor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .quick-fill-start input[type="date"] { width: auto; flex: none; }
+  .quick-fill-label { font-size: 13px; color: var(--accent-ink); white-space: nowrap; }
+  .quick-fill-label b { font-variant-numeric: tabular-nums; }
+
   .cal-cell.period { box-shadow: inset 3px 0 0 var(--period-pink); }
   .cal-cell.ovulation { box-shadow: inset 3px 0 0 var(--ovulation-purple); }
   .cal-cell.period.ovulation { box-shadow: inset 3px 0 0 var(--period-pink), inset -3px 0 0 var(--ovulation-purple); }
@@ -504,6 +514,24 @@
       <h2>이번 달 <span class="sub" id="calMonthLabel"></span></h2>
       <span class="sub">날짜 클릭 → 그날 일정 여러 개 추가/삭제</span>
     </div>
+
+    <div class="quick-fill-row">
+      <button type="button" class="btn small subtle" id="quickFillToggle">⚡ 근무 빠른 입력</button>
+    </div>
+    <div class="quick-fill-bar" id="quickFillBar" style="display:none;">
+      <div class="quick-fill-start" id="quickFillStartRow">
+        <label class="recurring-label" style="margin:0;">시작일</label>
+        <input type="date" id="quickFillStartInput">
+        <button type="button" class="btn small" id="quickFillStartBtn">여기부터 시작</button>
+      </div>
+      <div class="quick-fill-cursor" id="quickFillCursorRow" style="display:none;">
+        <span class="quick-fill-label">입력 중 · <b id="quickFillDateLabel"></b></span>
+        <span class="work-btn-row" id="quickFillButtons"></span>
+        <button type="button" class="btn small subtle" id="quickFillSkip">건너뛰기</button>
+        <button type="button" class="btn small subtle" id="quickFillDone">종료</button>
+      </div>
+    </div>
+
     <div class="cycle-info" id="cycleInfo"></div>
     <div class="cal-wrap">
       <div class="cal-grid" id="calGrid"></div>
@@ -1369,6 +1397,56 @@
     if (workShifts[dateStr]) return workShifts[dateStr];
     return recurringWorkForDate_(dateObj);
   }
+
+  // ---------- 근무 빠른 입력 (시작일 정하고 D/D/학회/오프만 연달아 클릭) ----------
+  let quickFillDate = null;
+  function renderQuickFillButtons_() {
+    $('#quickFillButtons').innerHTML = Object.keys(WORK_CODES).map(code =>
+      `<button type="button" class="work-pick-btn ${WORK_CODES[code].cls}" data-code="${code}">${WORK_CODES[code].label}</button>`
+    ).join('');
+  }
+  function updateQuickFillLabel_() {
+    const d = new Date(quickFillDate + 'T00:00:00');
+    $('#quickFillDateLabel').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 (${DOW_NAMES[d.getDay()]})`;
+  }
+  $('#quickFillToggle').addEventListener('click', () => {
+    const bar = $('#quickFillBar');
+    const opening = bar.style.display === 'none';
+    bar.style.display = opening ? 'flex' : 'none';
+    if (opening) {
+      $('#quickFillStartInput').value = todayISO;
+      $('#quickFillStartRow').style.display = 'flex';
+      $('#quickFillCursorRow').style.display = 'none';
+      quickFillDate = null;
+    }
+  });
+  $('#quickFillStartBtn').addEventListener('click', () => {
+    const start = $('#quickFillStartInput').value;
+    if (!start) return;
+    quickFillDate = start;
+    renderQuickFillButtons_();
+    updateQuickFillLabel_();
+    $('#quickFillStartRow').style.display = 'none';
+    $('#quickFillCursorRow').style.display = 'flex';
+  });
+  $('#quickFillButtons').addEventListener('click', (e) => {
+    const btn = e.target.closest('.work-pick-btn');
+    if (!btn || !quickFillDate) return;
+    workShifts[quickFillDate] = btn.dataset.code;
+    saveWorkShifts_();
+    quickFillDate = addDays_(quickFillDate, 1);
+    updateQuickFillLabel_();
+    renderCalendar();
+  });
+  $('#quickFillSkip').addEventListener('click', () => {
+    if (!quickFillDate) return;
+    quickFillDate = addDays_(quickFillDate, 1);
+    updateQuickFillLabel_();
+  });
+  $('#quickFillDone').addEventListener('click', () => {
+    $('#quickFillBar').style.display = 'none';
+    quickFillDate = null;
+  });
 
   function renderRecurringList() {
     const el = $('#recurringList');
