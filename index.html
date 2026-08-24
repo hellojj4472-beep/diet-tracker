@@ -386,6 +386,12 @@
   .day-modal-move:disabled { opacity: 0.25; cursor: default; }
   .day-modal-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px; line-height: 1; }
   .day-modal-del:hover { color: var(--bad); }
+  .emoji-picker-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+  .emoji-pick-btn {
+    width: 30px; height: 30px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .emoji-pick-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
   .day-modal-add { display: flex; gap: 8px; }
   .day-modal-add input { flex: 1; }
 
@@ -635,6 +641,7 @@
           <span id="recurWorkPicker" class="work-btn-row" style="display:none;"></span>
           <button type="button" class="btn small" id="recurAddBtn">추가</button>
         </div>
+        <div class="emoji-picker-row" id="recurEmojiRow"></div>
         <div class="recurring-list" id="recurringList"></div>
       </div>
     </details>
@@ -761,6 +768,7 @@
     <div class="day-modal-love" id="dayModalLove"></div>
     <div class="day-modal-recur" id="dayModalRecur"></div>
     <div class="day-modal-list" id="dayModalList"></div>
+    <div class="emoji-picker-row" id="dayModalEmojiRow"></div>
     <div class="day-modal-add">
       <input type="text" id="dayModalInput" placeholder="일정 추가">
       <button type="button" class="btn small" id="dayModalAddBtn">추가</button>
@@ -1605,6 +1613,27 @@
   $('#recurType').addEventListener('change', updateRecurTypeUI_);
   $('#recurStartDate').value = todayISO;
   updateRecurTypeUI_();
+
+  // ---------- 일정 입력창에 바로 넣을 수 있는 이모지 버튼 ----------
+  const SCHEDULE_EMOJIS = ['🏥','💊','🚗','✈️','🎂','📞','💇','🧾','🐾','🍽️','📚','💰','🎉','🏋️','📌','⭐'];
+  function insertAtCursor_(input, text) {
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    input.value = input.value.slice(0, start) + text + input.value.slice(end);
+    const pos = start + text.length;
+    input.focus();
+    input.setSelectionRange(pos, pos);
+  }
+  function renderEmojiRow_(rowId, inputId) {
+    $(rowId).innerHTML = SCHEDULE_EMOJIS.map(e => `<button type="button" class="emoji-pick-btn">${e}</button>`).join('');
+    $(rowId).addEventListener('click', (e) => {
+      const btn = e.target.closest('.emoji-pick-btn');
+      if (!btn) return;
+      insertAtCursor_($(inputId), btn.textContent);
+    });
+  }
+  renderEmojiRow_('#dayModalEmojiRow', '#dayModalInput');
+  renderEmojiRow_('#recurEmojiRow', '#recurText');
 
   let selectedRecurWorkCode = null;
   function renderRecurWorkPicker_() {
