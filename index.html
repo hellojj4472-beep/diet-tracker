@@ -29,6 +29,8 @@
     --bad-soft: #F3DFDA;
     --plan: #6B5FA8;
     --bowel-brown: #8B5E34;
+    --period-pink: #C4577A;
+    --ovulation-purple: #7B6BC2;
     --radius-s: 8px;
     --radius-m: 14px;
     --radius-l: 20px;
@@ -56,6 +58,8 @@
       --bad-soft: #3A211D;
       --plan: #B3A6E8;
       --bowel-brown: #C99B6E;
+      --period-pink: #E28CA8;
+      --ovulation-purple: #A79AE0;
       color-scheme: dark;
     }
   }
@@ -79,6 +83,8 @@
     --bad-soft: #3A211D;
     --plan: #B3A6E8;
     --bowel-brown: #C99B6E;
+    --period-pink: #E28CA8;
+    --ovulation-purple: #A79AE0;
     color-scheme: dark;
   }
 
@@ -208,6 +214,26 @@
   .cal-legend .legend-icon { display: inline-flex; align-items: center; margin-right: 4px; }
   .cal-legend .legend-icon.bowel { color: var(--bowel-brown); font-size: 12px; }
   .cal-legend .legend-icon.exercise { color: var(--warn); }
+  .cal-legend .legend-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .cal-legend .legend-swatch.period { background: var(--period-pink); }
+  .cal-legend .legend-swatch.ovulation { background: var(--ovulation-purple); }
+
+  .cycle-info {
+    display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-soft);
+    background: var(--paper-sunken); border-radius: var(--radius-m); padding: 10px 14px; margin-bottom: 14px;
+  }
+  .cycle-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .cal-cell.period { box-shadow: inset 3px 0 0 var(--period-pink); }
+  .cal-cell.ovulation { box-shadow: inset 3px 0 0 var(--ovulation-purple); }
+  .cal-cell.period.ovulation { box-shadow: inset 3px 0 0 var(--period-pink), inset -3px 0 0 var(--ovulation-purple); }
+
+  .day-modal-period { margin-bottom: 12px; }
+  .period-toggle-btn {
+    width: 100%; padding: 9px 12px; border-radius: var(--radius-s); border: 1px solid var(--period-pink);
+    background: var(--paper); color: var(--period-pink); font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px; cursor: pointer;
+  }
+  .period-toggle-btn.active { background: var(--period-pink); color: #fff; }
 
   /* ---------- 반복 일정 ---------- */
   .recurring-toggle { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
@@ -450,6 +476,7 @@
       <h2>이번 달 <span class="sub" id="calMonthLabel"></span></h2>
       <span class="sub">날짜 클릭 → 그날 일정 여러 개 추가/삭제</span>
     </div>
+    <div class="cycle-info" id="cycleInfo"></div>
     <div class="cal-wrap">
       <div class="cal-grid" id="calGrid"></div>
     </div>
@@ -458,6 +485,8 @@
       <span><i class="legend-icon exercise"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M2 9h2v6H2zM20 9h2v6h-2zM5 7h2v10H5zM17 7h2v10h-2zM8 11h8v2H8z"/></svg></i>운동</span>
       <span><i class="dot plan"></i>일정</span>
       <span><i class="dot note"></i>메모</span>
+      <span><i class="legend-swatch period"></i>생리일</span>
+      <span><i class="legend-swatch ovulation"></i>배란 예상일</span>
       <span>· 체중은 숫자로 표시돼요</span>
     </div>
 
@@ -601,6 +630,7 @@
       <h3 id="dayModalTitle"></h3>
       <button type="button" class="day-modal-close" id="dayModalClose" aria-label="닫기">×</button>
     </div>
+    <div class="day-modal-period" id="dayModalPeriod"></div>
     <div class="day-modal-recur" id="dayModalRecur"></div>
     <div class="day-modal-list" id="dayModalList"></div>
     <div class="day-modal-add">
@@ -1205,6 +1235,67 @@
     try { localStorage.setItem(RECUR_DONE_KEY, JSON.stringify(recurringDone)); } catch (e) {}
   }
   function doneKey_(ruleId, dateStr) { return ruleId + '_' + dateStr; }
+
+  // ---------- 생리주기 (생리일 / 배란 예상일) — 브라우저에만 저장 ----------
+  const PERIOD_KEY = 'dietTracker:periodDates';
+  let periodDates = [];
+  try {
+    const savedPeriod = localStorage.getItem(PERIOD_KEY);
+    if (savedPeriod) periodDates = JSON.parse(savedPeriod);
+  } catch (e) { /* 무시 */ }
+  function savePeriodDates_() {
+    try { localStorage.setItem(PERIOD_KEY, JSON.stringify(periodDates)); } catch (e) {}
+  }
+  function daysBetween_(a, b) {
+    return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+  }
+  function addDays_(dateStr, n) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function getPeriodStartDates_() {
+    const sorted = periodDates.slice().sort();
+    const starts = [];
+    let prev = null;
+    sorted.forEach(d => {
+      if (!prev || daysBetween_(prev, d) > 1) starts.push(d);
+      prev = d;
+    });
+    return starts;
+  }
+  function averageCycleLength_() {
+    const starts = getPeriodStartDates_();
+    if (starts.length < 2) return 28; // 데이터 부족하면 평균값(28일)으로 추정
+    const diffs = [];
+    for (let i = 1; i < starts.length; i++) diffs.push(daysBetween_(starts[i - 1], starts[i]));
+    return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length);
+  }
+  function predictNextPeriod_() {
+    const starts = getPeriodStartDates_();
+    if (!starts.length) return null;
+    return addDays_(starts[starts.length - 1], averageCycleLength_());
+  }
+  function predictOvulation_() {
+    const next = predictNextPeriod_();
+    return next ? addDays_(next, -14) : null;
+  }
+  function renderCycleInfo_() {
+    const el = $('#cycleInfo');
+    if (!periodDates.length) {
+      el.innerHTML = '캘린더 날짜를 클릭해서 생리일을 표시하면, 평균 주기와 배란 예상일을 계산해드려요.';
+      return;
+    }
+    const cycleLen = averageCycleLength_();
+    const next = predictNextPeriod_();
+    const ovul = predictOvulation_();
+    const fmt = (d) => { const [, m, dd] = d.split('-'); return `${parseInt(m)}/${parseInt(dd)}`; };
+    el.innerHTML = `<span>평균 주기 <b>${cycleLen}일</b></span>` +
+      (next ? `<span>다음 생리 예상 <b>${fmt(next)}</b></span>` : '') +
+      (ovul ? `<span>배란 예상일 <b>${fmt(ovul)}</b></span>` : '') +
+      `<span style="color:var(--ink-faint);font-size:11px;">· 예측값이라 참고용으로만 봐주세요</span>`;
+  }
+
   function recurringItemsForDate_(dateObj) {
     const dow = dateObj.getDay(), dom = dateObj.getDate();
     return recurringSchedules.filter(r => {
@@ -1314,6 +1405,9 @@
       calDataByDate[d] = Object.assign({}, calDataByDate[d], { scheduleItems: calScheduleOverrides[d] });
     });
 
+    renderCycleInfo_();
+    const ovulationEstimate = predictOvulation_();
+
     let html = '';
     DOW_NAMES.forEach(d => { html += `<div class="cal-dow">${d}</div>`; });
     for (let i = 0; i < firstDow; i++) html += `<div class="cal-cell empty"></div>`;
@@ -1322,6 +1416,8 @@
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const rec = calDataByDate[dateStr];
       const isToday = dateStr === todayISO;
+      const isPeriodDay = periodDates.includes(dateStr);
+      const isOvulationDay = ovulationEstimate === dateStr;
       const recurItems = recurringItemsForDate_(new Date(year, month, d)).map(r => ({ text: r.text, recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
       const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false, done: false }));
       const allItems = recurItems.concat(realItems);
@@ -1342,7 +1438,8 @@
         if (rec.note) badges.push(`<span class="cal-dot note" title="메모: ${escAttr_(rec.note)}"></span>`);
         if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
       }
-      html += `<div class="cal-cell${isToday ? ' today' : ''}" data-date="${dateStr}">${inner}</div>`;
+      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '');
+      html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
   }
@@ -1368,12 +1465,19 @@
     }).join('');
   }
 
+  function renderDayModalPeriod_(dateStr) {
+    const isPeriod = periodDates.includes(dateStr);
+    $('#dayModalPeriod').innerHTML =
+      `<button type="button" class="period-toggle-btn${isPeriod ? ' active' : ''}" id="periodToggleBtn">${isPeriod ? '🩸 생리일 해제' : '🩸 이 날을 생리일로 표시'}</button>`;
+  }
+
   function openDayModal_(dateStr) {
     currentModalDate = dateStr;
     const rec = calDataByDate[dateStr];
     const items = (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
     const d = new Date(dateStr + 'T00:00:00');
     $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
+    renderDayModalPeriod_(dateStr);
     renderDayModalRecur_(dateStr, d);
     renderDayModalList_(items);
     $('#dayModalInput').value = '';
@@ -1432,6 +1536,15 @@
     if (cb.checked) recurringDone[cb.dataset.key] = true; else delete recurringDone[cb.dataset.key];
     saveRecurringDone_();
     cb.closest('.day-modal-recur-item').classList.toggle('checked', cb.checked);
+    renderCalendar();
+  });
+
+  $('#dayModalPeriod').addEventListener('click', (e) => {
+    if (!e.target.closest('#periodToggleBtn') || !currentModalDate) return;
+    const idx = periodDates.indexOf(currentModalDate);
+    if (idx === -1) periodDates.push(currentModalDate); else periodDates.splice(idx, 1);
+    savePeriodDates_();
+    renderDayModalPeriod_(currentModalDate);
     renderCalendar();
   });
 
