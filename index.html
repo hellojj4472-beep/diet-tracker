@@ -274,7 +274,6 @@
   .cal-cell.period { box-shadow: inset 0 0 0 2px var(--period-pink); }
   .cal-cell.ovulation { box-shadow: inset 0 0 0 2px var(--ovulation-purple); }
   .cal-cell.period.ovulation { box-shadow: inset 0 0 0 2px var(--period-pink); }
-  .cal-cell.holiday { box-shadow: inset 0 0 0 2px var(--bad); }
 
   .day-modal-period { margin-bottom: 12px; }
   .period-toggle-btn {
@@ -1738,9 +1737,8 @@
       const dayWorkCode = getWorkForDate_(dateStr, dayDateObj);
       const isWorkDay = !!dayWorkCode && dayWorkCode !== 'off' && dayWorkCode !== 'e';
       const isEDay = dayWorkCode === 'e';
-      const isHoliday = !!KR_HOLIDAYS[dateStr] && KR_HOLIDAYS[dateStr] !== '대체공휴일';
       const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
-      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isEDay ? ' work-e-day' : '') + (isHoliday ? ' holiday' : '');
+      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isEDay ? ' work-e-day' : '');
       html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
