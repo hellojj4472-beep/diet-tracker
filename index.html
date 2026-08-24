@@ -952,7 +952,6 @@
     (typeof REAL_FOOD_DB !== 'undefined' ? REAL_FOOD_DB : []).filter(f => !_curatedLabels.has(f.label))
   );
 
-  const FAVORITES = ['현미밥','닭가슴살(구운)','계란후라이','그릭요거트','두부'];
   const MEALS = ['아침','점심','간식','저녁'];
 
   function foodDisplayBase(food) {
@@ -1111,16 +1110,6 @@
   function renderFavRow(cardEl) {
     const favRow = cardEl.querySelector('.fav-row');
     favRow.innerHTML = '';
-    FAVORITES.forEach(label => {
-      const food = FOOD_DB.find(f => f.label === label);
-      if (!food) return;
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'chip';
-      chip.dataset.food = label;
-      chip.textContent = '+ ' + foodDisplayBase(food);
-      favRow.appendChild(chip);
-    });
     customFavorites.forEach(food => {
       const wrap = document.createElement('span');
       wrap.className = 'chip-wrap';
