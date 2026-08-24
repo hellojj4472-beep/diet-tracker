@@ -181,35 +181,37 @@
 
   /* ---------- 월 캘린더 ---------- */
   .cal-wrap { overflow-x: auto; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; min-width: 560px; }
-  .cal-dow { text-align: center; font-size: 11.5px; color: var(--ink-faint); padding-bottom: 6px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; min-width: 700px; }
+  .cal-dow { text-align: center; font-size: 13px; color: var(--ink-faint); padding-bottom: 6px; }
   .cal-cell {
-    min-height: 108px; border: 1px solid var(--line); border-radius: 10px;
-    padding: 6px 7px; background: var(--paper-sunken); cursor: pointer;
+    min-height: 138px; border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 9px; background: var(--paper-sunken); cursor: pointer;
     display: flex; flex-direction: column;
   }
   .cal-cell[data-date]:hover { border-color: var(--plan); }
   .cal-cell.empty { border-color: transparent; background: transparent; cursor: default; }
   .cal-cell.today { border-color: var(--accent); background: var(--accent-soft); }
-  .cal-day-num { font-size: 11.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .cal-day-num { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .cal-cell.today .cal-day-num { color: var(--accent-ink); font-weight: 700; }
-  .cal-weight { font-size: 13px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; color: var(--ink); }
-  .cal-schedule-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+  .cal-stats { display: flex; flex-direction: column; gap: 1px; margin-top: 4px; }
+  .cal-weight, .cal-kcal { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.35; }
+  .cal-kcal { color: var(--accent-ink); }
+  .cal-schedule-list { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
   .cal-schedule-text {
-    font-size: 10.5px; color: var(--plan); font-weight: 700; line-height: 1.3;
+    font-size: 12px; color: var(--plan); font-weight: 700; line-height: 1.35;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .cal-schedule-text.recur { color: var(--ink-soft); font-weight: 400; }
   .cal-schedule-text.done { text-decoration: line-through; color: var(--ink-faint); opacity: 0.7; }
-  .cal-schedule-more { font-size: 10px; color: var(--ink-faint); }
-  .cal-badges { display: flex; gap: 4px; margin-top: auto; padding-top: 4px; }
-  .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .cal-schedule-more { font-size: 11px; color: var(--ink-faint); }
+  .cal-badges { display: flex; gap: 5px; margin-top: auto; padding-top: 5px; }
+  .cal-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
   .cal-dot.plan { background: var(--plan); }
   .cal-dot.note { background: var(--accent); }
   .cal-icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
-  .cal-icon.cal-bowel { color: var(--bowel-brown); font-size: 13px; }
+  .cal-icon.cal-bowel { color: var(--bowel-brown); font-size: 15px; }
   .cal-icon.cal-exercise { color: var(--warn); }
-  .cal-icon svg { display: block; }
+  .cal-icon svg { width: 14px; height: 14px; display: block; }
   .cal-legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin-top: 12px; flex-wrap: wrap; align-items: center; }
   .cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
   .cal-legend .dot.plan { background: var(--plan); }
@@ -249,7 +251,7 @@
   .period-toggle-btn.active { background: var(--period-pink); color: #fff; }
 
   /* ---------- 근무표 (D검정/D파랑/학회/오프) ---------- */
-  .cal-day-num .work-badge { font-weight: 700; font-size: 11px; margin-left: 3px; }
+  .cal-day-num .work-badge { font-weight: 700; font-size: 13px; margin-left: 3px; }
   .work-badge.work-d_black { color: var(--ink); }
   .work-badge.work-d_blue { color: var(--work-blue); }
   .work-badge.work-conference { color: var(--accent-ink); }
@@ -1553,14 +1555,7 @@
     if (rows) rows.forEach(r => { if (r.date) calDataByDate[r.date] = r; });
 
     // 오늘 기록은 아직 구글시트에 저장 전일 수 있으니 현재 화면 상태로 보강
-    const { burn: todayBurn } = computeDayTotals();
-    const todayRec = Object.assign({}, calDataByDate[todayISO]);
-    if (state.weight) todayRec.weight = state.weight;
-    if (state.bowel !== null) todayRec.bowel = state.bowel === true ? '배변함' : '배변안함';
-    if (todayBurn) todayRec.burn = todayBurn;
-    if (state.note) todayRec.note = state.note;
-    if (state.scheduleItems && state.scheduleItems.length) todayRec.scheduleItems = state.scheduleItems;
-    calDataByDate[todayISO] = todayRec;
+    calDataByDate[todayISO] = buildTodayRec_();
 
     // 방금 캘린더에서 직접 수정한 일정은 서버 응답보다 우선
     Object.keys(calScheduleOverrides).forEach(d => {
@@ -1581,31 +1576,62 @@
       const isToday = dateStr === todayISO;
       const isPeriodDay = periodDates.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
-      const workCode = getWorkForDate_(dateStr, dayDateObj);
-      const recurItems = recurringItemsForDate_(dayDateObj).map(r => ({ text: r.text, recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
-      const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false, done: false }));
-      const allItems = recurItems.concat(realItems);
-
-      let inner = `<div class="cal-day-num">${d}${workCode ? ` <span class="work-badge ${WORK_CODES[workCode].cls}">${WORK_CODES[workCode].label}</span>` : ''}</div>`;
-      if (rec && rec.weight) inner += `<div class="cal-weight">${rec.weight}kg</div>`;
-      if (allItems.length) {
-        const shown = allItems.slice(0, 3);
-        const extra = allItems.length - shown.length;
-        inner += '<div class="cal-schedule-list">' + shown.map(it =>
-          `<div class="cal-schedule-text${it.recur ? ' recur' : ''}${it.done ? ' done' : ''}" title="${escAttr_(it.text)}">${it.recur ? '🔁 ' : ''}${escAttr_(it.text)}</div>`
-        ).join('') + (extra > 0 ? `<div class="cal-schedule-more">+${extra}개 더</div>` : '') + '</div>';
-      }
-      if (rec) {
-        const badges = [];
-        if (rec.bowel === '배변함') badges.push('<span class="cal-icon cal-bowel" title="배변함">★</span>');
-        if (rec.burn) badges.push(`<span class="cal-icon cal-exercise" title="운동 ${rec.burn}kcal">${DUMBBELL_SVG}</span>`);
-        if (rec.note) badges.push(`<span class="cal-dot note" title="메모: ${escAttr_(rec.note)}"></span>`);
-        if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
-      }
+      const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
       const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '');
       html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
+  }
+
+  function buildCellInner_(d, dateStr, dateObj, rec) {
+    const workCode = getWorkForDate_(dateStr, dateObj);
+    const recurItems = recurringItemsForDate_(dateObj).map(r => ({ text: r.text, recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
+    const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false, done: false }));
+    const allItems = recurItems.concat(realItems);
+
+    let inner = `<div class="cal-day-num">${d}${workCode ? ` <span class="work-badge ${WORK_CODES[workCode].cls}">${WORK_CODES[workCode].label}</span>` : ''}</div>`;
+    if (rec && (rec.weight || rec.kcal)) {
+      inner += '<div class="cal-stats">';
+      if (rec.weight) inner += `<span class="cal-weight">${rec.weight}kg</span>`;
+      if (rec.kcal) inner += `<span class="cal-kcal">${rec.kcal}kcal</span>`;
+      inner += '</div>';
+    }
+    if (allItems.length) {
+      const shown = allItems.slice(0, 3);
+      const extra = allItems.length - shown.length;
+      inner += '<div class="cal-schedule-list">' + shown.map(it =>
+        `<div class="cal-schedule-text${it.recur ? ' recur' : ''}${it.done ? ' done' : ''}" title="${escAttr_(it.text)}">${it.recur ? '🔁 ' : ''}${escAttr_(it.text)}</div>`
+      ).join('') + (extra > 0 ? `<div class="cal-schedule-more">+${extra}개 더</div>` : '') + '</div>';
+    }
+    if (rec) {
+      const badges = [];
+      if (rec.bowel === '배변함') badges.push('<span class="cal-icon cal-bowel" title="배변함">★</span>');
+      if (rec.burn) badges.push(`<span class="cal-icon cal-exercise" title="운동 ${rec.burn}kcal">${DUMBBELL_SVG}</span>`);
+      if (rec.note) badges.push(`<span class="cal-dot note" title="메모: ${escAttr_(rec.note)}"></span>`);
+      if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
+    }
+    return inner;
+  }
+
+  function buildTodayRec_() {
+    const { day, burn } = computeDayTotals();
+    const todayRec = Object.assign({}, calDataByDate[todayISO]);
+    todayRec.kcal = day.kcal;
+    if (state.weight) todayRec.weight = state.weight;
+    if (state.bowel !== null) todayRec.bowel = state.bowel === true ? '배변함' : '배변안함';
+    if (burn) todayRec.burn = burn;
+    if (state.note) todayRec.note = state.note;
+    if (state.scheduleItems && state.scheduleItems.length) todayRec.scheduleItems = state.scheduleItems;
+    return todayRec;
+  }
+
+  // render()가 호출될 때마다(음식 추가 등) 네트워크 재조회 없이 오늘 칸만 즉시 갱신
+  function refreshTodayCell_() {
+    const cell = $('#calGrid').querySelector(`.cal-cell[data-date="${todayISO}"]`);
+    if (!cell) return;
+    calDataByDate[todayISO] = buildTodayRec_();
+    const todayDateObj = new Date(todayISO + 'T00:00:00');
+    cell.innerHTML = buildCellInner_(todayDateObj.getDate(), todayISO, todayDateObj, calDataByDate[todayISO]);
   }
 
   // ---------- 날짜 클릭 → 그날 일정 여러 개 추가/삭제 (모달) ----------
@@ -1785,6 +1811,7 @@
     pills.push(state.sleep !== null && state.sleep < 6 ? ['bad', `수면 ${state.sleep}h · 부족`] : state.sleep !== null ? ['good', `수면 ${state.sleep}h`] : ['neutral','수면 미입력']);
     $('#pillRow').innerHTML = pills.map(([tone,label]) => `<span class="pill ${tone}"><span class="dot" style="background:currentColor"></span>${label}</span>`).join('');
 
+    refreshTodayCell_();
     saveState();
   }
 
