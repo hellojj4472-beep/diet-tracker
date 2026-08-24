@@ -274,10 +274,11 @@
   .love-toggle-btn.active { background: var(--love-red); color: #fff; }
   .cal-icon.cal-love { color: var(--love-red); font-size: 14px; }
 
-  /* ---------- 근무표 (D검정/D파랑/학회/오프) ---------- */
-  .cal-day-num .work-badge { font-weight: 700; font-size: 12px; }
+  /* ---------- 근무표 (D검정/D파랑/E/학회/오프) ---------- */
+  .cal-day-num .work-badge { font-weight: 800; font-size: 15px; }
   .work-badge.work-d_black { color: var(--ink); }
   .work-badge.work-d_blue { color: var(--work-blue); }
+  .work-badge.work-e { color: var(--warn); }
   .work-badge.work-conference { color: var(--accent-ink); }
   .work-badge.work-off { color: var(--ink-faint); }
 
@@ -289,10 +290,12 @@
   }
   .work-pick-btn.work-d_black { color: var(--ink); border-color: var(--line); }
   .work-pick-btn.work-d_blue { color: var(--work-blue); border-color: var(--work-blue); }
+  .work-pick-btn.work-e { color: var(--warn); border-color: var(--warn); }
   .work-pick-btn.work-conference { color: var(--accent-ink); border-color: var(--accent); }
   .work-pick-btn.work-off { color: var(--ink-faint); }
   .work-pick-btn.work-d_black.active { background: var(--ink); color: var(--paper); }
   .work-pick-btn.work-d_blue.active { background: var(--work-blue); color: #fff; }
+  .work-pick-btn.work-e.active { background: var(--warn); color: #fff; }
   .work-pick-btn.work-conference.active { background: var(--accent); color: #fff; }
   .work-pick-btn.work-off.active { background: var(--ink-faint); color: var(--paper); }
   .work-pick-btn.work-clear { color: var(--ink-faint); font-weight: 400; }
@@ -1424,6 +1427,7 @@
   const WORK_CODES = {
     d_black: { label: 'D', cls: 'work-d_black' },
     d_blue: { label: 'D', cls: 'work-d_blue' },
+    e: { label: 'E', cls: 'work-e' },
     conference: { label: '학회', cls: 'work-conference' },
     off: { label: '/', cls: 'work-off' },
   };
