@@ -41,6 +41,7 @@
     --ovulation-purple: #7B6BC2;
     --work-blue: #2F5FA8;
     --love-red: #C93150;
+    --work-day-bg: #E3EFCD;
     --radius-s: 8px;
     --radius-m: 14px;
     --radius-l: 20px;
@@ -72,6 +73,7 @@
       --ovulation-purple: #A79AE0;
       --work-blue: #7FA8E8;
       --love-red: #E8748C;
+      --work-day-bg: #2E3A22;
       color-scheme: dark;
     }
   }
@@ -99,6 +101,7 @@
     --ovulation-purple: #A79AE0;
     --work-blue: #7FA8E8;
     --love-red: #E8748C;
+    --work-day-bg: #2E3A22;
     color-scheme: dark;
   }
 
@@ -201,7 +204,9 @@
   }
   .cal-cell[data-date]:hover { border-color: var(--plan); }
   .cal-cell.empty { border-color: transparent; background: transparent; cursor: default; }
-  .cal-cell.today { border-color: var(--accent); background: var(--accent-soft); }
+  .cal-cell.today { border-color: var(--accent); }
+  .cal-cell.today:not(.work-day) { background: var(--accent-soft); }
+  .cal-cell.work-day { background: var(--work-day-bg); }
   .cal-cell-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; }
   .cal-day-num { font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 3px; flex-wrap: wrap; }
   .cal-day-num.red-day, .cal-dow.red-day { color: var(--bad); }
@@ -285,7 +290,7 @@
   .cal-day-num .work-badge { font-weight: 800; font-size: 15px; }
   .work-badge.work-d_black { color: var(--ink); }
   .work-badge.work-d_blue { color: var(--work-blue); }
-  .work-badge.work-e { color: var(--warn); }
+  .work-badge.work-e { color: var(--ink); }
   .work-badge.work-conference { color: var(--accent-ink); }
   .work-badge.work-off { color: var(--ink-faint); }
 
@@ -297,12 +302,12 @@
   }
   .work-pick-btn.work-d_black { color: var(--ink); border-color: var(--line); }
   .work-pick-btn.work-d_blue { color: var(--work-blue); border-color: var(--work-blue); }
-  .work-pick-btn.work-e { color: var(--warn); border-color: var(--warn); }
+  .work-pick-btn.work-e { color: var(--ink); border-color: var(--line); }
   .work-pick-btn.work-conference { color: var(--accent-ink); border-color: var(--accent); }
   .work-pick-btn.work-off { color: var(--ink-faint); }
   .work-pick-btn.work-d_black.active { background: var(--ink); color: var(--paper); }
   .work-pick-btn.work-d_blue.active { background: var(--work-blue); color: #fff; }
-  .work-pick-btn.work-e.active { background: var(--warn); color: #fff; }
+  .work-pick-btn.work-e.active { background: var(--ink); color: var(--paper); }
   .work-pick-btn.work-conference.active { background: var(--accent); color: #fff; }
   .work-pick-btn.work-off.active { background: var(--ink-faint); color: var(--paper); }
   .work-pick-btn.work-clear { color: var(--ink-faint); font-weight: 400; }
@@ -1677,8 +1682,9 @@
       const isToday = dateStr === todayISO;
       const isPeriodDay = periodDates.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
+      const isWorkDay = !!getWorkForDate_(dateStr, dayDateObj) && getWorkForDate_(dateStr, dayDateObj) !== 'off';
       const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
-      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '');
+      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '');
       html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
