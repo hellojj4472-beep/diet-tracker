@@ -1620,7 +1620,10 @@
   updateRecurTypeUI_();
 
   // ---------- 일정 입력창에 바로 넣을 수 있는 이모지 버튼 ----------
-  const SCHEDULE_EMOJIS = ['🏥','💊','🚗','✈️','🎂','📞','💇','🧾','🐾','🍽️','📚','💰','🎉','🏋️','📌','⭐'];
+  const SCHEDULE_EMOJIS = [
+    '🏥','💊','🚗','✈️','🎂','📞','💇','🧾','🐾','🍽️','📚','💰','🎉','🏋️','📌','⭐',
+    '🏠','🛒','🧹','🎓','💼','🚌','🏦','📦','🎁','☕','🧑‍⚕️','🎗️','📷','🛏️','🚿','🗓️','❤️','🔔','✅','🚨'
+  ];
   function insertAtCursor_(input, text) {
     const start = input.selectionStart ?? input.value.length;
     const end = input.selectionEnd ?? input.value.length;
@@ -1748,7 +1751,7 @@
     const workCode = getWorkForDate_(dateStr, dateObj);
     const recurItems = recurringItemsForDate_(dateObj).map(r => ({ text: r.text + '*', recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
     const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false, done: false }));
-    const allItems = realItems.concat(recurItems);
+    const allItems = recurItems.concat(realItems);
 
     const holidayName = KR_HOLIDAYS[dateStr];
     const isRedDay = !!holidayName || dateObj.getDay() === 0;
