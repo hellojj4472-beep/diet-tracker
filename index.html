@@ -822,7 +822,8 @@
 
   // ---------- date ----------
   const today = new Date();
-  const todayISO = today.toISOString().slice(0,10);
+  // toISOString()은 UTC 기준이라 자정~오전 9시 사이엔 하루 전 날짜로 잘못 계산되는 문제가 있어서 로컬 날짜로 직접 계산
+  const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   let viewYear = today.getFullYear();
   let viewMonth = today.getMonth(); // 캘린더에서 보고 있는 달 (이전/다음 달 이동용)
   const STORAGE_KEY = 'dietTracker:' + todayISO;
