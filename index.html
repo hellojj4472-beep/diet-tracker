@@ -240,6 +240,11 @@
   }
   .cycle-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
 
+  .cal-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .cal-nav-label { font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 16px; min-width: 92px; text-align: center; }
+  .cal-nav .btn.small { padding: 6px 12px; }
+  #calPrevBtn, #calNextBtn { padding: 6px 12px !important; }
+
   .quick-fill-row { margin-bottom: 10px; }
   .quick-fill-bar {
     display: flex; flex-direction: column; gap: 10px; background: var(--accent-soft);
@@ -535,8 +540,15 @@
 
   <section class="card" id="calendarCard">
     <div class="section-head">
-      <h2>이번 달 <span class="sub" id="calMonthLabel"></span></h2>
+      <h2>캘린더</h2>
       <span class="sub">날짜 클릭 → 그날 일정 여러 개 추가/삭제</span>
+    </div>
+
+    <div class="cal-nav">
+      <button type="button" class="btn small subtle" id="calPrevBtn" aria-label="이전 달">‹</button>
+      <span class="cal-nav-label" id="calMonthLabel"></span>
+      <button type="button" class="btn small subtle" id="calNextBtn" aria-label="다음 달">›</button>
+      <button type="button" class="btn small subtle" id="calTodayBtn">오늘</button>
     </div>
 
     <div class="quick-fill-row">
@@ -735,6 +747,8 @@
   // ---------- date ----------
   const today = new Date();
   const todayISO = today.toISOString().slice(0,10);
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 캘린더에서 보고 있는 달 (이전/다음 달 이동용)
   const STORAGE_KEY = 'dietTracker:' + todayISO;
 
   // Phase 2: Google Sheets 연동 (Apps Script 웹앱)
@@ -1570,14 +1584,14 @@
 
   async function renderCalendar() {
     const calGrid = $('#calGrid');
-    const now = new Date();
-    const year = now.getFullYear(), month = now.getMonth();
+    const year = viewYear, month = viewMonth;
     $('#calMonthLabel').textContent = `${year}년 ${month + 1}월`;
+    $('#calTodayBtn').style.visibility = (year === today.getFullYear() && month === today.getMonth()) ? 'hidden' : 'visible';
 
     const firstDow = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    const rows = await fetchSheetRows_(45);
+    const rows = await fetchSheetRows_(366);
     calDataByDate = {};
     if (rows) rows.forEach(r => { if (r.date) calDataByDate[r.date] = r; });
 
@@ -1927,6 +1941,19 @@
     }
   }
   $('#syncBtn').addEventListener('click', syncToSheets);
+
+  $('#calPrevBtn').addEventListener('click', () => {
+    viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  $('#calNextBtn').addEventListener('click', () => {
+    viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+  $('#calTodayBtn').addEventListener('click', () => {
+    viewYear = today.getFullYear(); viewMonth = today.getMonth();
+    renderCalendar();
+  });
 
   render();
   renderCalendar();
