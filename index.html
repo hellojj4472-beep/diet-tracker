@@ -31,6 +31,7 @@
     --bowel-brown: #8B5E34;
     --period-pink: #C4577A;
     --ovulation-purple: #7B6BC2;
+    --work-blue: #2F5FA8;
     --radius-s: 8px;
     --radius-m: 14px;
     --radius-l: 20px;
@@ -60,6 +61,7 @@
       --bowel-brown: #C99B6E;
       --period-pink: #E28CA8;
       --ovulation-purple: #A79AE0;
+      --work-blue: #7FA8E8;
       color-scheme: dark;
     }
   }
@@ -85,6 +87,7 @@
     --bowel-brown: #C99B6E;
     --period-pink: #E28CA8;
     --ovulation-purple: #A79AE0;
+    --work-blue: #7FA8E8;
     color-scheme: dark;
   }
 
@@ -234,6 +237,31 @@
     background: var(--paper); color: var(--period-pink); font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px; cursor: pointer;
   }
   .period-toggle-btn.active { background: var(--period-pink); color: #fff; }
+
+  /* ---------- 근무표 (D검정/D파랑/학회/오프) ---------- */
+  .cal-day-num .work-badge { font-weight: 700; font-size: 11px; margin-left: 3px; }
+  .work-badge.work-d_black { color: var(--ink); }
+  .work-badge.work-d_blue { color: var(--work-blue); }
+  .work-badge.work-conference { color: var(--accent-ink); }
+  .work-badge.work-off { color: var(--ink-faint); }
+
+  .day-modal-work { margin-bottom: 12px; }
+  .work-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .work-pick-btn {
+    padding: 8px 13px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); font-family: 'Gowun Dodum', sans-serif; font-size: 13px; cursor: pointer; font-weight: 700;
+  }
+  .work-pick-btn.work-d_black { color: var(--ink); border-color: var(--line); }
+  .work-pick-btn.work-d_blue { color: var(--work-blue); border-color: var(--work-blue); }
+  .work-pick-btn.work-conference { color: var(--accent-ink); border-color: var(--accent); }
+  .work-pick-btn.work-off { color: var(--ink-faint); }
+  .work-pick-btn.work-d_black.active { background: var(--ink); color: var(--paper); }
+  .work-pick-btn.work-d_blue.active { background: var(--work-blue); color: #fff; }
+  .work-pick-btn.work-conference.active { background: var(--accent); color: #fff; }
+  .work-pick-btn.work-off.active { background: var(--ink-faint); color: var(--paper); }
+  .work-pick-btn.work-clear { color: var(--ink-faint); font-weight: 400; }
+  .recur-work-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-soft); flex-shrink: 0; }
+  .recur-work-toggle input { width: auto; }
 
   /* ---------- 반복 일정 ---------- */
   .recurring-toggle { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
@@ -487,6 +515,7 @@
       <span><i class="dot note"></i>메모</span>
       <span><i class="legend-swatch period"></i>생리일</span>
       <span><i class="legend-swatch ovulation"></i>배란 예상일</span>
+      <span>· D/학회/오프는 날짜 옆에 표시</span>
       <span>· 체중은 숫자로 표시돼요</span>
     </div>
 
@@ -506,7 +535,9 @@
             <input type="number" id="recurIntervalWeeks" min="1" value="2">
             <span class="recurring-label">주마다</span>
           </span>
+          <label class="recur-work-toggle"><input type="checkbox" id="recurIsWork"> 근무로 등록</label>
           <input type="text" id="recurText" placeholder="예: 화분 물주기">
+          <span id="recurWorkPicker" class="work-btn-row" style="display:none;"></span>
           <button type="button" class="btn small" id="recurAddBtn">추가</button>
         </div>
         <div class="recurring-list" id="recurringList"></div>
@@ -630,6 +661,7 @@
       <h3 id="dayModalTitle"></h3>
       <button type="button" class="day-modal-close" id="dayModalClose" aria-label="닫기">×</button>
     </div>
+    <div class="day-modal-work" id="dayModalWork"></div>
     <div class="day-modal-period" id="dayModalPeriod"></div>
     <div class="day-modal-recur" id="dayModalRecur"></div>
     <div class="day-modal-list" id="dayModalList"></div>
@@ -1296,21 +1328,48 @@
       `<span style="color:var(--ink-faint);font-size:11px;">· 예측값이라 참고용으로만 봐주세요</span>`;
   }
 
-  function recurringItemsForDate_(dateObj) {
+  function ruleMatchesDate_(r, dateObj) {
     const dow = dateObj.getDay(), dom = dateObj.getDate();
-    return recurringSchedules.filter(r => {
-      if (r.type === 'weekly') return r.dow === dow;
-      if (r.type === 'monthly') return r.day === dom;
-      if (r.type === 'interval') {
-        const start = new Date(r.startDate + 'T00:00:00');
-        const diffDays = Math.round((dateObj - start) / 86400000);
-        if (diffDays < 0) return false;
-        return diffDays % ((r.intervalWeeks || 1) * 7) === 0;
-      }
-      return false;
-    });
+    if (r.type === 'weekly') return r.dow === dow;
+    if (r.type === 'monthly') return r.day === dom;
+    if (r.type === 'interval') {
+      const start = new Date(r.startDate + 'T00:00:00');
+      const diffDays = Math.round((dateObj - start) / 86400000);
+      if (diffDays < 0) return false;
+      return diffDays % ((r.intervalWeeks || 1) * 7) === 0;
+    }
+    return false;
+  }
+  function recurringItemsForDate_(dateObj) {
+    return recurringSchedules.filter(r => !r.isWork && ruleMatchesDate_(r, dateObj));
+  }
+  function recurringWorkForDate_(dateObj) {
+    const match = recurringSchedules.find(r => r.isWork && ruleMatchesDate_(r, dateObj));
+    return match ? match.workCode : null;
   }
   const DOW_NAMES = ['일','월','화','수','목','금','토'];
+
+  // ---------- 근무표 (D검정/D파랑/학회/오프) — 브라우저에만 저장 ----------
+  const WORK_CODES = {
+    d_black: { label: 'D', cls: 'work-d_black' },
+    d_blue: { label: 'D', cls: 'work-d_blue' },
+    conference: { label: '학회', cls: 'work-conference' },
+    off: { label: '/', cls: 'work-off' },
+  };
+  const WORK_KEY = 'dietTracker:workShifts';
+  let workShifts = {}; // { 'yyyy-MM-dd': 'd_black'|'d_blue'|'conference'|'off' }
+  try {
+    const savedWork = localStorage.getItem(WORK_KEY);
+    if (savedWork) workShifts = JSON.parse(savedWork);
+  } catch (e) { /* 무시 */ }
+  function saveWorkShifts_() {
+    try { localStorage.setItem(WORK_KEY, JSON.stringify(workShifts)); } catch (e) {}
+  }
+  function getWorkForDate_(dateStr, dateObj) {
+    if (workShifts[dateStr]) return workShifts[dateStr];
+    return recurringWorkForDate_(dateObj);
+  }
+
   function renderRecurringList() {
     const el = $('#recurringList');
     if (!recurringSchedules.length) { el.innerHTML = '<div class="empty-row">등록된 반복 일정이 없어요</div>'; return; }
@@ -1319,7 +1378,8 @@
       if (r.type === 'weekly') label = `매주 ${DOW_NAMES[r.dow]}요일`;
       else if (r.type === 'monthly') label = `매달 ${r.day}일`;
       else label = `${r.startDate}부터 ${r.intervalWeeks}주마다`;
-      return `<div class="recurring-item"><span>${label} · ${escAttr_(r.text)}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
+      const desc = r.isWork ? `근무(${escAttr_(r.text)})` : escAttr_(r.text);
+      return `<div class="recurring-item"><span>${label} · ${desc}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
     }).join('');
   }
   function populateRecurValueOptions_() {
@@ -1348,22 +1408,46 @@
   $('#recurStartDate').value = todayISO;
   updateRecurTypeUI_();
 
+  let selectedRecurWorkCode = null;
+  function renderRecurWorkPicker_() {
+    $('#recurWorkPicker').innerHTML = Object.keys(WORK_CODES).map(code =>
+      `<button type="button" class="work-pick-btn ${WORK_CODES[code].cls}" data-code="${code}">${WORK_CODES[code].label}</button>`
+    ).join('');
+  }
+  renderRecurWorkPicker_();
+  $('#recurWorkPicker').addEventListener('click', (e) => {
+    const btn = e.target.closest('.work-pick-btn');
+    if (!btn) return;
+    selectedRecurWorkCode = btn.dataset.code;
+    $$('.work-pick-btn', $('#recurWorkPicker')).forEach(b => b.classList.toggle('active', b === btn));
+  });
+  $('#recurIsWork').addEventListener('change', (e) => {
+    const isWork = e.target.checked;
+    $('#recurText').style.display = isWork ? 'none' : '';
+    $('#recurWorkPicker').style.display = isWork ? 'flex' : 'none';
+  });
+
   $('#recurAddBtn').addEventListener('click', () => {
-    const text = $('#recurText').value.trim();
+    const isWork = $('#recurIsWork').checked;
+    if (isWork && !selectedRecurWorkCode) return;
+    const text = isWork ? WORK_CODES[selectedRecurWorkCode].label : $('#recurText').value.trim();
     if (!text) return;
     const type = $('#recurType').value;
     const id = Date.now() + '_' + Math.random().toString(36).slice(2);
+    const workFields = isWork ? { isWork: true, workCode: selectedRecurWorkCode } : {};
     if (type === 'interval') {
       const startDate = $('#recurStartDate').value;
       const intervalWeeks = parseInt($('#recurIntervalWeeks').value) || 1;
       if (!startDate) { $('#recurStartDate').focus(); return; }
-      recurringSchedules.push({ id, type, startDate, intervalWeeks, text });
+      recurringSchedules.push(Object.assign({ id, type, startDate, intervalWeeks, text }, workFields));
     } else {
       const value = parseInt($('#recurValue').value);
-      recurringSchedules.push(type === 'weekly' ? { id, type, dow: value, text } : { id, type, day: value, text });
+      recurringSchedules.push(Object.assign(type === 'weekly' ? { id, type, dow: value, text } : { id, type, day: value, text }, workFields));
     }
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
+    selectedRecurWorkCode = null;
+    $$('.work-pick-btn', $('#recurWorkPicker')).forEach(b => b.classList.remove('active'));
   });
   $('#recurringList').addEventListener('click', (e) => {
     const btn = e.target.closest('.recurring-del');
@@ -1414,15 +1498,17 @@
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dayDateObj = new Date(year, month, d);
       const rec = calDataByDate[dateStr];
       const isToday = dateStr === todayISO;
       const isPeriodDay = periodDates.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
-      const recurItems = recurringItemsForDate_(new Date(year, month, d)).map(r => ({ text: r.text, recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
+      const workCode = getWorkForDate_(dateStr, dayDateObj);
+      const recurItems = recurringItemsForDate_(dayDateObj).map(r => ({ text: r.text, recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
       const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false, done: false }));
       const allItems = recurItems.concat(realItems);
 
-      let inner = `<div class="cal-day-num">${d}</div>`;
+      let inner = `<div class="cal-day-num">${d}${workCode ? ` <span class="work-badge ${WORK_CODES[workCode].cls}">${WORK_CODES[workCode].label}</span>` : ''}</div>`;
       if (rec && rec.weight) inner += `<div class="cal-weight">${rec.weight}kg</div>`;
       if (allItems.length) {
         const shown = allItems.slice(0, 3);
@@ -1471,12 +1557,25 @@
       `<button type="button" class="period-toggle-btn${isPeriod ? ' active' : ''}" id="periodToggleBtn">${isPeriod ? '🩸 생리일 해제' : '🩸 이 날을 생리일로 표시'}</button>`;
   }
 
+  function renderDayModalWork_(dateStr, dateObj) {
+    const oneOff = workShifts[dateStr];
+    const recurCode = recurringWorkForDate_(dateObj);
+    const active = oneOff !== undefined ? oneOff : (recurCode || null);
+    const hint = (oneOff === undefined && recurCode) ? '<div class="search-hint" style="margin-top:6px;">반복 일정에서 자동 적용됨 · 다른 근무 누르면 이 날만 바뀌어요</div>' : '';
+    $('#dayModalWork').innerHTML = '<div class="day-modal-subhead">근무</div><div class="work-btn-row">' +
+      Object.keys(WORK_CODES).map(code =>
+        `<button type="button" class="work-pick-btn ${WORK_CODES[code].cls}${active === code ? ' active' : ''}" data-code="${code}">${WORK_CODES[code].label}</button>`
+      ).join('') +
+      '<button type="button" class="work-pick-btn work-clear" data-code="">지움</button></div>' + hint;
+  }
+
   function openDayModal_(dateStr) {
     currentModalDate = dateStr;
     const rec = calDataByDate[dateStr];
     const items = (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
     const d = new Date(dateStr + 'T00:00:00');
     $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
+    renderDayModalWork_(dateStr, d);
     renderDayModalPeriod_(dateStr);
     renderDayModalRecur_(dateStr, d);
     renderDayModalList_(items);
@@ -1545,6 +1644,20 @@
     if (idx === -1) periodDates.push(currentModalDate); else periodDates.splice(idx, 1);
     savePeriodDates_();
     renderDayModalPeriod_(currentModalDate);
+    renderCalendar();
+  });
+
+  $('#dayModalWork').addEventListener('click', (e) => {
+    const btn = e.target.closest('.work-pick-btn');
+    if (!btn || !currentModalDate) return;
+    const code = btn.dataset.code;
+    if (!code || workShifts[currentModalDate] === code) {
+      delete workShifts[currentModalDate];
+    } else {
+      workShifts[currentModalDate] = code;
+    }
+    saveWorkShifts_();
+    renderDayModalWork_(currentModalDate, new Date(currentModalDate + 'T00:00:00'));
     renderCalendar();
   });
 
