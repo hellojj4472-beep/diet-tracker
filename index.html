@@ -1015,6 +1015,10 @@
     state.skipMeasure = e.target.checked;
     $('#morningFields').style.opacity = state.skipMeasure ? 0.45 : 1;
     $$('#morningFields input').forEach(i => i.disabled = state.skipMeasure);
+    if (state.skipMeasure) {
+      // 측정 건너뜀 체크하면 이미 입력했던 값도 함께 지움
+      ['weight', 'waist', 'thigh', 'hip'].forEach(id => { state[id] = null; $('#' + id).value = ''; });
+    }
     render();
   });
   ['weight','waist','thigh','hip'].forEach(id => {
