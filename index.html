@@ -32,6 +32,7 @@
     --period-pink: #C4577A;
     --ovulation-purple: #7B6BC2;
     --work-blue: #2F5FA8;
+    --love-red: #C93150;
     --radius-s: 8px;
     --radius-m: 14px;
     --radius-l: 20px;
@@ -62,6 +63,7 @@
       --period-pink: #E28CA8;
       --ovulation-purple: #A79AE0;
       --work-blue: #7FA8E8;
+      --love-red: #E8748C;
       color-scheme: dark;
     }
   }
@@ -88,6 +90,7 @@
     --period-pink: #E28CA8;
     --ovulation-purple: #A79AE0;
     --work-blue: #7FA8E8;
+    --love-red: #E8748C;
     color-scheme: dark;
   }
 
@@ -250,6 +253,14 @@
   }
   .period-toggle-btn.active { background: var(--period-pink); color: #fff; }
 
+  .day-modal-love { margin-bottom: 12px; }
+  .love-toggle-btn {
+    width: 100%; padding: 9px 12px; border-radius: var(--radius-s); border: 1px solid var(--love-red);
+    background: var(--paper); color: var(--love-red); font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px; cursor: pointer;
+  }
+  .love-toggle-btn.active { background: var(--love-red); color: #fff; }
+  .cal-icon.cal-love { color: var(--love-red); font-size: 14px; }
+
   /* ---------- 근무표 (D검정/D파랑/학회/오프) ---------- */
   .cal-day-num .work-badge { font-weight: 700; font-size: 13px; margin-left: 3px; }
   .work-badge.work-d_black { color: var(--ink); }
@@ -334,6 +345,9 @@
     display: flex; justify-content: space-between; align-items: center; gap: 8px;
     padding: 9px 11px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13.5px;
   }
+  .day-modal-item-text { flex: 1; cursor: text; }
+  .day-modal-item-text:hover { color: var(--accent-ink); }
+  .day-modal-item-input { padding: 4px 6px; font-size: 13.5px; }
   .day-modal-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px; line-height: 1; }
   .day-modal-del:hover { color: var(--bad); }
   .day-modal-add { display: flex; gap: 8px; }
@@ -545,6 +559,7 @@
       <span><i class="dot note"></i>메모</span>
       <span><i class="legend-swatch period"></i>생리일</span>
       <span><i class="legend-swatch ovulation"></i>배란 예상일</span>
+      <span><i class="legend-icon" style="color:var(--love-red);font-size:12px;">♥</i>사랑</span>
       <span>· D/학회/오프는 날짜 옆에 표시</span>
       <span>· 체중은 숫자로 표시돼요</span>
     </div>
@@ -693,6 +708,7 @@
     </div>
     <div class="day-modal-work" id="dayModalWork"></div>
     <div class="day-modal-period" id="dayModalPeriod"></div>
+    <div class="day-modal-love" id="dayModalLove"></div>
     <div class="day-modal-recur" id="dayModalRecur"></div>
     <div class="day-modal-list" id="dayModalList"></div>
     <div class="day-modal-add">
@@ -1308,6 +1324,17 @@
   function savePeriodDates_() {
     try { localStorage.setItem(PERIOD_KEY, JSON.stringify(periodDates)); } catch (e) {}
   }
+
+  const LOVE_KEY = 'dietTracker:loveDates';
+  let loveDates = [];
+  try {
+    const savedLove = localStorage.getItem(LOVE_KEY);
+    if (savedLove) loveDates = JSON.parse(savedLove);
+  } catch (e) { /* 무시 */ }
+  function saveLoveDates_() {
+    try { localStorage.setItem(LOVE_KEY, JSON.stringify(loveDates)); } catch (e) {}
+  }
+
   function daysBetween_(a, b) {
     return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
   }
@@ -1603,13 +1630,12 @@
         `<div class="cal-schedule-text${it.recur ? ' recur' : ''}${it.done ? ' done' : ''}" title="${escAttr_(it.text)}">${it.recur ? '🔁 ' : ''}${escAttr_(it.text)}</div>`
       ).join('') + (extra > 0 ? `<div class="cal-schedule-more">+${extra}개 더</div>` : '') + '</div>';
     }
-    if (rec) {
-      const badges = [];
-      if (rec.bowel === '배변함') badges.push('<span class="cal-icon cal-bowel" title="배변함">★</span>');
-      if (rec.burn) badges.push(`<span class="cal-icon cal-exercise" title="운동 ${rec.burn}kcal">${DUMBBELL_SVG}</span>`);
-      if (rec.note) badges.push(`<span class="cal-dot note" title="메모: ${escAttr_(rec.note)}"></span>`);
-      if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
-    }
+    const badges = [];
+    if (rec && rec.bowel === '배변함') badges.push('<span class="cal-icon cal-bowel" title="배변함">★</span>');
+    if (rec && rec.burn) badges.push(`<span class="cal-icon cal-exercise" title="운동 ${rec.burn}kcal">${DUMBBELL_SVG}</span>`);
+    if (rec && rec.note) badges.push(`<span class="cal-dot note" title="메모: ${escAttr_(rec.note)}"></span>`);
+    if (loveDates.includes(dateStr)) badges.push('<span class="cal-icon cal-love" title="사랑">♥</span>');
+    if (badges.length) inner += `<div class="cal-badges">${badges.join('')}</div>`;
     return inner;
   }
 
@@ -1640,7 +1666,7 @@
   function renderDayModalList_(items) {
     const listEl = $('#dayModalList');
     listEl.innerHTML = items.length
-      ? items.map((t, i) => `<div class="day-modal-item"><span>${escAttr_(t)}</span><button type="button" class="day-modal-del" data-idx="${i}" aria-label="삭제">×</button></div>`).join('')
+      ? items.map((t, i) => `<div class="day-modal-item" data-idx="${i}"><span class="day-modal-item-text">${escAttr_(t)}</span><button type="button" class="day-modal-del" data-idx="${i}" aria-label="삭제">×</button></div>`).join('')
       : '<div class="empty-row">아직 일정이 없어요</div>';
   }
 
@@ -1659,6 +1685,12 @@
     const isPeriod = periodDates.includes(dateStr);
     $('#dayModalPeriod').innerHTML =
       `<button type="button" class="period-toggle-btn${isPeriod ? ' active' : ''}" id="periodToggleBtn">${isPeriod ? '🩸 생리일 해제' : '🩸 이 날을 생리일로 표시'}</button>`;
+  }
+
+  function renderDayModalLove_(dateStr) {
+    const isLove = loveDates.includes(dateStr);
+    $('#dayModalLove').innerHTML =
+      `<button type="button" class="love-toggle-btn${isLove ? ' active' : ''}" id="loveToggleBtn">${isLove ? '♥ 사랑 해제' : '♥ 이 날을 사랑으로 표시'}</button>`;
   }
 
   function renderDayModalWork_(dateStr, dateObj) {
@@ -1681,6 +1713,7 @@
     $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
     renderDayModalWork_(dateStr, d);
     renderDayModalPeriod_(dateStr);
+    renderDayModalLove_(dateStr);
     renderDayModalRecur_(dateStr, d);
     renderDayModalList_(items);
     $('#dayModalInput').value = '';
@@ -1724,12 +1757,39 @@
   $('#dayModalInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#dayModalAddBtn').click(); });
   $('#dayModalList').addEventListener('click', (e) => {
     const delBtn = e.target.closest('.day-modal-del');
-    if (!delBtn || !currentModalDate) return;
+    if (delBtn && currentModalDate) {
+      const items = currentModalItems_();
+      items.splice(parseInt(delBtn.dataset.idx), 1);
+      renderDayModalList_(items);
+      calDataByDate[currentModalDate] = Object.assign({}, calDataByDate[currentModalDate], { scheduleItems: items });
+      saveDaySchedule_(currentModalDate, items);
+      return;
+    }
+    const textSpan = e.target.closest('.day-modal-item-text');
+    if (!textSpan || textSpan.querySelector('input') || !currentModalDate) return;
+    const wrap = textSpan.closest('.day-modal-item');
+    const idx = parseInt(wrap.dataset.idx);
     const items = currentModalItems_();
-    items.splice(parseInt(delBtn.dataset.idx), 1);
-    renderDayModalList_(items);
-    calDataByDate[currentModalDate] = Object.assign({}, calDataByDate[currentModalDate], { scheduleItems: items });
-    saveDaySchedule_(currentModalDate, items);
+    textSpan.innerHTML = `<input type="text" class="day-modal-item-input" value="${escAttr_(items[idx])}">`;
+    const input = textSpan.querySelector('input');
+    input.focus();
+    input.select();
+    let done = false;
+    const save = () => {
+      if (done) return;
+      done = true;
+      const val = input.value.trim();
+      const latest = currentModalItems_();
+      if (val) latest[idx] = val; else latest.splice(idx, 1);
+      renderDayModalList_(latest);
+      calDataByDate[currentModalDate] = Object.assign({}, calDataByDate[currentModalDate], { scheduleItems: latest });
+      saveDaySchedule_(currentModalDate, latest);
+    };
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') input.blur();
+      if (ev.key === 'Escape') { done = true; renderDayModalList_(items); }
+    });
+    input.addEventListener('blur', save);
   });
   $('#dayModalClose').addEventListener('click', closeDayModal_);
   $('#dayModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'dayModalOverlay') closeDayModal_(); });
@@ -1748,6 +1808,15 @@
     if (idx === -1) periodDates.push(currentModalDate); else periodDates.splice(idx, 1);
     savePeriodDates_();
     renderDayModalPeriod_(currentModalDate);
+    renderCalendar();
+  });
+
+  $('#dayModalLove').addEventListener('click', (e) => {
+    if (!e.target.closest('#loveToggleBtn') || !currentModalDate) return;
+    const idx = loveDates.indexOf(currentModalDate);
+    if (idx === -1) loveDates.push(currentModalDate); else loveDates.splice(idx, 1);
+    saveLoveDates_();
+    renderDayModalLove_(currentModalDate);
     renderCalendar();
   });
 
