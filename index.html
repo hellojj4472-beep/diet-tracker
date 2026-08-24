@@ -330,6 +330,13 @@
   .work-badge.work-off { color: var(--ink-faint); }
 
   .day-modal-work { margin-bottom: 12px; }
+  .day-modal-weight { margin-bottom: 12px; }
+  .day-modal-weight-row { display: flex; align-items: center; gap: 8px; }
+  .day-modal-weight-row input {
+    width: 90px; padding: 8px 10px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px;
+  }
+  .day-modal-weight-row span { font-size: 12.5px; color: var(--ink-soft); }
   .work-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .work-pick-btn {
     padding: 8px 13px; border-radius: var(--radius-s); border: 1px solid var(--line);
@@ -802,6 +809,7 @@
       <button type="button" class="day-modal-close" id="dayModalClose" aria-label="닫기">×</button>
     </div>
     <div class="day-modal-work" id="dayModalWork"></div>
+    <div class="day-modal-weight" id="dayModalWeight"></div>
     <div class="day-modal-period" id="dayModalPeriod"></div>
     <div class="day-modal-love" id="dayModalLove"></div>
     <div class="day-modal-recur" id="dayModalRecur"></div>
@@ -1757,6 +1765,7 @@
   // ---------- 월 캘린더 렌더 ----------
   let calDataByDate = {};
   let calScheduleOverrides = {}; // 방금 수정한 일정을 서버 재조회 전에도 화면에 바로 보여주기 위한 캐시
+  let calWeightOverrides = {}; // 방금 캘린더에서 수정한 체중을 서버 재조회 전에도 화면에 바로 보여주기 위한 캐시
 
   async function renderCalendar() {
     const calGrid = $('#calGrid');
@@ -1785,9 +1794,12 @@
     // 오늘 기록은 아직 구글시트에 저장 전일 수 있으니 현재 화면 상태로 보강
     calDataByDate[todayISO] = buildTodayRec_();
 
-    // 방금 캘린더에서 직접 수정한 일정은 서버 응답보다 우선
+    // 방금 캘린더에서 직접 수정한 일정/체중은 서버 응답보다 우선
     Object.keys(calScheduleOverrides).forEach(d => {
       calDataByDate[d] = Object.assign({}, calDataByDate[d], { scheduleItems: calScheduleOverrides[d] });
+    });
+    Object.keys(calWeightOverrides).forEach(d => {
+      calDataByDate[d] = Object.assign({}, calDataByDate[d], { weight: calWeightOverrides[d] });
     });
 
     renderCycleInfo_();
@@ -1907,6 +1919,13 @@
       `<button type="button" class="love-toggle-btn${isLove ? ' active' : ''}" id="loveToggleBtn">${isLove ? '♥ 사랑 해제' : '♥ 이 날을 사랑으로 표시'}</button>`;
   }
 
+  function renderDayModalWeight_(dateStr) {
+    const rec = calDataByDate[dateStr];
+    const w = rec && rec.weight !== '' && rec.weight != null ? rec.weight : '';
+    $('#dayModalWeight').innerHTML = '<div class="day-modal-subhead">체중</div><div class="day-modal-weight-row">' +
+      `<input type="number" step="0.1" id="dayModalWeightInput" value="${w}" placeholder="예: 52.3">` +
+      '<span>kg</span></div>';
+  }
   function renderDayModalWork_(dateStr, dateObj) {
     const oneOff = workShifts[dateStr];
     const recurCode = recurringWorkForDate_(dateObj);
@@ -1926,6 +1945,7 @@
     const d = new Date(dateStr + 'T00:00:00');
     $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
     renderDayModalWork_(dateStr, d);
+    renderDayModalWeight_(dateStr);
     renderDayModalPeriod_(dateStr);
     renderDayModalLove_(dateStr);
     renderDayModalRecur_(dateStr, d);
@@ -1964,6 +1984,23 @@
       });
     } catch (err) { console.warn('근무 저장 실패', err); }
     finally { pendingWorkSaves.delete(dateStr); }
+  }
+  async function saveWeightForDate_(dateStr, weight) {
+    calWeightOverrides[dateStr] = weight != null ? weight : '';
+    if (dateStr === todayISO) {
+      state.weight = weight;
+      $('#weight').value = weight != null ? weight : '';
+      saveState();
+    }
+    renderCalendar();
+    if (!SHEETS_URL) return;
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'weight', date: dateStr, weight: weight != null ? weight : '' }),
+      });
+    } catch (err) { console.warn('체중 저장 실패', err); }
   }
   // 다른 기기에서 이미 구글시트에 저장해둔 오늘 기록이 있으면, 이 기기에 아직 로컬 기록이 없을 때만 가져와서 채움
   async function hydrateTodayFromSheets_() {
@@ -2099,6 +2136,12 @@
     saveWorkForDate_(currentModalDate, newCode);
     renderDayModalWork_(currentModalDate, new Date(currentModalDate + 'T00:00:00'));
     renderCalendar();
+  });
+
+  $('#dayModalWeight').addEventListener('change', (e) => {
+    if (e.target.id !== 'dayModalWeightInput' || !currentModalDate) return;
+    const v = e.target.value.trim();
+    saveWeightForDate_(currentModalDate, v === '' ? null : parseFloat(v));
   });
 
   $('#calGrid').addEventListener('click', (e) => {

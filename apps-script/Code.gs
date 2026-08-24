@@ -110,6 +110,19 @@ function setScheduleOnly_(sheet, payload) {
   return { ok: true };
 }
 
+// 체중 칸 하나만 업데이트 (그 날의 다른 기록은 건드리지 않음)
+function setWeightOnly_(sheet, payload) {
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = findRowIndex_(data, payload.date);
+  if (rowIndex === -1) {
+    rowIndex = sheet.getLastRow() + 1;
+    sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
+  }
+  var weightCol = HEADERS.indexOf('체중') + 1;
+  sheet.getRange(rowIndex, weightCol).setValue(payload.weight != null ? payload.weight : '');
+  return { ok: true };
+}
+
 // 근무 칸 하나만 업데이트 (그 날의 다른 기록은 건드리지 않음)
 function setWorkOnly_(sheet, payload) {
   var data = sheet.getDataRange().getValues();
@@ -134,6 +147,9 @@ function doPost(e) {
     }
     if (payload.action === 'work') {
       return jsonOutput_(setWorkOnly_(sheet, payload));
+    }
+    if (payload.action === 'weight') {
+      return jsonOutput_(setWeightOnly_(sheet, payload));
     }
     var data = sheet.getDataRange().getValues();
     var rowIndex = findRowIndex_(data, payload.date);
