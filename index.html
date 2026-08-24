@@ -1624,12 +1624,12 @@
     '🏥','💊','🚗','✈️','🎂','📞','💇','🧾','🐾','🍽️','📚','💰','🎉','🏋️','📌','⭐',
     '🏠','🛒','🧹','🎓','💼','🚌','🏦','📦','🎁','☕','🧑‍⚕️','🎗️','📷','🛏️','🚿','🗓️','❤️','🔔','✅','🚨'
   ];
-  function insertAtCursor_(input, text) {
-    const start = input.selectionStart ?? input.value.length;
-    const end = input.selectionEnd ?? input.value.length;
-    input.value = input.value.slice(0, start) + text + input.value.slice(end);
-    const pos = start + text.length;
+  function insertAtCursor_(input, emoji) {
+    // 이모지는 항상 맨 앞에 붙여줘요
+    const rest = input.value.replace(/^\s+/, '');
+    input.value = emoji + ' ' + rest;
     input.focus();
+    const pos = input.value.length;
     input.setSelectionRange(pos, pos);
   }
   function renderEmojiRow_(rowId, inputId) {
