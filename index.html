@@ -191,6 +191,7 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .cal-schedule-text.recur { color: var(--ink-soft); font-weight: 400; }
+  .cal-schedule-text.done { text-decoration: line-through; color: var(--ink-faint); opacity: 0.7; }
   .cal-schedule-more { font-size: 10px; color: var(--ink-faint); }
   .cal-badges { display: flex; gap: 4px; margin-top: auto; padding-top: 4px; }
   .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
@@ -254,6 +255,14 @@
   .day-modal-head h3 { font-size: 16px; margin: 0; }
   .day-modal-close { background: none; border: none; font-size: 20px; color: var(--ink-faint); cursor: pointer; line-height: 1; padding: 0; }
   .day-modal-close:hover { color: var(--ink); }
+  .day-modal-recur { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .day-modal-subhead { font-size: 11.5px; color: var(--ink-faint); margin-top: 4px; }
+  .day-modal-recur-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 11px;
+    background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13.5px; cursor: pointer;
+  }
+  .day-modal-recur-item input[type="checkbox"] { width: auto; flex-shrink: 0; accent-color: var(--accent); }
+  .day-modal-recur-item.checked span { text-decoration: line-through; color: var(--ink-faint); }
   .day-modal-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; margin-bottom: 14px; }
   .day-modal-item {
     display: flex; justify-content: space-between; align-items: center; gap: 8px;
@@ -592,6 +601,7 @@
       <h3 id="dayModalTitle"></h3>
       <button type="button" class="day-modal-close" id="dayModalClose" aria-label="닫기">×</button>
     </div>
+    <div class="day-modal-recur" id="dayModalRecur"></div>
     <div class="day-modal-list" id="dayModalList"></div>
     <div class="day-modal-add">
       <input type="text" id="dayModalInput" placeholder="일정 추가">
@@ -1163,7 +1173,6 @@
   $('#noteInput').value = state.note || '';
   $('#noteInput').addEventListener('input', (e) => { state.note = e.target.value; saveState(); });
 
-  // ---------- recommendation rules ----------
   // ---------- 월 캘린더 ----------
   const DUMBBELL_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M2 9h2v6H2zM20 9h2v6h-2zM5 7h2v10H5zM17 7h2v10h-2zM8 11h8v2H8z"/></svg>';
 
@@ -1178,9 +1187,24 @@
     const savedRecur = localStorage.getItem(RECUR_KEY);
     if (savedRecur) recurringSchedules = JSON.parse(savedRecur);
   } catch (e) { /* 무시 */ }
+  // 예전에 만든 반복 일정에는 id가 없을 수 있으니 채워넣기 (완료 체크 저장용 키로 씀)
+  let recurIdBackfilled_ = false;
+  recurringSchedules.forEach(r => { if (!r.id) { r.id = Date.now() + '_' + Math.random().toString(36).slice(2); recurIdBackfilled_ = true; } });
   function saveRecurring_() {
     try { localStorage.setItem(RECUR_KEY, JSON.stringify(recurringSchedules)); } catch (e) {}
   }
+  if (recurIdBackfilled_) saveRecurring_();
+
+  const RECUR_DONE_KEY = 'dietTracker:recurringDone';
+  let recurringDone = {}; // { "ruleId_yyyy-MM-dd": true }
+  try {
+    const savedDone = localStorage.getItem(RECUR_DONE_KEY);
+    if (savedDone) recurringDone = JSON.parse(savedDone);
+  } catch (e) { /* 무시 */ }
+  function saveRecurringDone_() {
+    try { localStorage.setItem(RECUR_DONE_KEY, JSON.stringify(recurringDone)); } catch (e) {}
+  }
+  function doneKey_(ruleId, dateStr) { return ruleId + '_' + dateStr; }
   function recurringItemsForDate_(dateObj) {
     const dow = dateObj.getDay(), dom = dateObj.getDate();
     return recurringSchedules.filter(r => {
@@ -1237,14 +1261,15 @@
     const text = $('#recurText').value.trim();
     if (!text) return;
     const type = $('#recurType').value;
+    const id = Date.now() + '_' + Math.random().toString(36).slice(2);
     if (type === 'interval') {
       const startDate = $('#recurStartDate').value;
       const intervalWeeks = parseInt($('#recurIntervalWeeks').value) || 1;
       if (!startDate) { $('#recurStartDate').focus(); return; }
-      recurringSchedules.push({ type, startDate, intervalWeeks, text });
+      recurringSchedules.push({ id, type, startDate, intervalWeeks, text });
     } else {
       const value = parseInt($('#recurValue').value);
-      recurringSchedules.push(type === 'weekly' ? { type, dow: value, text } : { type, day: value, text });
+      recurringSchedules.push(type === 'weekly' ? { id, type, dow: value, text } : { id, type, day: value, text });
     }
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
@@ -1297,8 +1322,8 @@
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const rec = calDataByDate[dateStr];
       const isToday = dateStr === todayISO;
-      const recurItems = recurringItemsForDate_(new Date(year, month, d)).map(r => ({ text: r.text, recur: true }));
-      const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false }));
+      const recurItems = recurringItemsForDate_(new Date(year, month, d)).map(r => ({ text: r.text, recur: true, done: !!recurringDone[doneKey_(r.id, dateStr)] }));
+      const realItems = (rec && Array.isArray(rec.scheduleItems) ? rec.scheduleItems : []).map(t => ({ text: t, recur: false, done: false }));
       const allItems = recurItems.concat(realItems);
 
       let inner = `<div class="cal-day-num">${d}</div>`;
@@ -1307,7 +1332,7 @@
         const shown = allItems.slice(0, 3);
         const extra = allItems.length - shown.length;
         inner += '<div class="cal-schedule-list">' + shown.map(it =>
-          `<div class="cal-schedule-text${it.recur ? ' recur' : ''}" title="${escAttr_(it.text)}">${it.recur ? '🔁 ' : ''}${escAttr_(it.text)}</div>`
+          `<div class="cal-schedule-text${it.recur ? ' recur' : ''}${it.done ? ' done' : ''}" title="${escAttr_(it.text)}">${it.recur ? '🔁 ' : ''}${escAttr_(it.text)}</div>`
         ).join('') + (extra > 0 ? `<div class="cal-schedule-more">+${extra}개 더</div>` : '') + '</div>';
       }
       if (rec) {
@@ -1332,12 +1357,24 @@
       : '<div class="empty-row">아직 일정이 없어요</div>';
   }
 
+  function renderDayModalRecur_(dateStr, dateObj) {
+    const recurEl = $('#dayModalRecur');
+    const rules = recurringItemsForDate_(dateObj);
+    if (!rules.length) { recurEl.innerHTML = ''; return; }
+    recurEl.innerHTML = '<div class="day-modal-subhead">🔁 반복 일정 · 실행했으면 체크</div>' + rules.map(r => {
+      const key = doneKey_(r.id, dateStr);
+      const done = !!recurringDone[key];
+      return `<label class="day-modal-recur-item${done ? ' checked' : ''}"><input type="checkbox" class="recur-done-check" data-key="${key}" ${done ? 'checked' : ''}><span>${escAttr_(r.text)}</span></label>`;
+    }).join('');
+  }
+
   function openDayModal_(dateStr) {
     currentModalDate = dateStr;
     const rec = calDataByDate[dateStr];
     const items = (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
     const d = new Date(dateStr + 'T00:00:00');
     $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
+    renderDayModalRecur_(dateStr, d);
     renderDayModalList_(items);
     $('#dayModalInput').value = '';
     $('#dayModalOverlay').style.display = 'flex';
@@ -1389,6 +1426,14 @@
   });
   $('#dayModalClose').addEventListener('click', closeDayModal_);
   $('#dayModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'dayModalOverlay') closeDayModal_(); });
+  $('#dayModalRecur').addEventListener('change', (e) => {
+    const cb = e.target.closest('.recur-done-check');
+    if (!cb || !currentModalDate) return;
+    if (cb.checked) recurringDone[cb.dataset.key] = true; else delete recurringDone[cb.dataset.key];
+    saveRecurringDone_();
+    cb.closest('.day-modal-recur-item').classList.toggle('checked', cb.checked);
+    renderCalendar();
+  });
 
   $('#calGrid').addEventListener('click', (e) => {
     const cell = e.target.closest('.cal-cell[data-date]');
