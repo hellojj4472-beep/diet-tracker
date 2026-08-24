@@ -219,13 +219,13 @@
   .cal-kcal-corner { font-size: 10.5px; font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
   .cal-stats { display: flex; flex-direction: column; gap: 1px; margin-top: 3px; }
   .cal-weight { font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.3; }
-  .cal-schedule-list { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin-top: 4px; }
+  .cal-schedule-list { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
   .cal-schedule-text {
     font-size: 12px; color: var(--plan); font-weight: 700; line-height: 1.3;
-    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .cal-schedule-text.done { text-decoration: line-through; color: var(--ink-faint); opacity: 0.7; }
-  .cal-schedule-more { font-size: 10.5px; color: var(--ink-soft); flex-basis: 100%; }
+  .cal-schedule-more { font-size: 10.5px; color: var(--ink-soft); }
   .cal-badges { display: flex; gap: 4px; margin-top: auto; padding-top: 4px; }
   .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
   .cal-dot.plan { background: var(--plan); }
@@ -387,6 +387,7 @@
   .day-modal-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px; line-height: 1; }
   .day-modal-del:hover { color: var(--bad); }
   .emoji-picker-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+  .recurring-add-row .emoji-picker-row { margin-bottom: 0; }
   .emoji-pick-btn {
     width: 30px; height: 30px; border-radius: var(--radius-s); border: 1px solid var(--line);
     background: var(--paper); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
@@ -638,10 +639,10 @@
           <input type="date" id="recurEndDate">
           <label class="recur-work-toggle"><input type="checkbox" id="recurIsWork"> 근무로 등록</label>
           <input type="text" id="recurText" placeholder="예: 화분 물주기">
+          <span class="emoji-picker-row" id="recurEmojiRow"></span>
           <span id="recurWorkPicker" class="work-btn-row" style="display:none;"></span>
           <button type="button" class="btn small" id="recurAddBtn">추가</button>
         </div>
-        <div class="emoji-picker-row" id="recurEmojiRow"></div>
         <div class="recurring-list" id="recurringList"></div>
       </div>
     </details>
@@ -1730,7 +1731,7 @@
       const isPeriodDay = periodDates.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
       const isWorkDay = !!getWorkForDate_(dateStr, dayDateObj) && getWorkForDate_(dateStr, dayDateObj) !== 'off';
-      const isHoliday = !!KR_HOLIDAYS[dateStr];
+      const isHoliday = !!KR_HOLIDAYS[dateStr] && KR_HOLIDAYS[dateStr] !== '대체공휴일';
       const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
       const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isHoliday ? ' holiday' : '');
       html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
