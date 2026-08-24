@@ -945,9 +945,10 @@
   };
 
   // 오늘 날짜로 이미 저장된 기록이 있으면 복원 (브라우저 로컬 저장 · 새로고침 대비)
+  let hasLocalToday_ = false;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) Object.assign(state, JSON.parse(saved));
+    if (saved) { Object.assign(state, JSON.parse(saved)); hasLocalToday_ = true; }
   } catch (e) { /* localStorage 사용 불가 시 조용히 무시 */ }
 
   // 예전 버전(수량 조절 기능 이전)에 저장된 항목도 수량 조절 가능하도록 보정
@@ -1581,6 +1582,7 @@
     if (!btn || !quickFillDate) return;
     workShifts[quickFillDate] = btn.dataset.code;
     saveWorkShifts_();
+    saveWorkForDate_(quickFillDate, btn.dataset.code);
     quickFillDate = addDays_(quickFillDate, 1);
     updateQuickFillLabel_();
     renderCalendar();
@@ -1740,6 +1742,17 @@
     const rows = await fetchSheetRows_(366);
     calDataByDate = {};
     if (rows) rows.forEach(r => { if (r.date) calDataByDate[r.date] = r; });
+
+    // 다른 기기에서 입력한 근무표를 이 기기에도 반영 (방금 이 기기에서 저장 중인 날짜는 건드리지 않음)
+    if (rows) {
+      let workChanged = false;
+      rows.forEach(r => {
+        if (!r.date || pendingWorkSaves.has(r.date)) return;
+        if (r.work && workShifts[r.date] !== r.work) { workShifts[r.date] = r.work; workChanged = true; }
+        else if (r.work === '' && workShifts[r.date]) { delete workShifts[r.date]; workChanged = true; }
+      });
+      if (workChanged) saveWorkShifts_();
+    }
 
     // 오늘 기록은 아직 구글시트에 저장 전일 수 있으니 현재 화면 상태로 보강
     calDataByDate[todayISO] = buildTodayRec_();
@@ -1911,6 +1924,44 @@
       } catch (err) { console.warn('일정 저장 실패', err); }
     }
   }
+  const pendingWorkSaves = new Set();
+  async function saveWorkForDate_(dateStr, code) {
+    if (!SHEETS_URL) return;
+    pendingWorkSaves.add(dateStr);
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'work', date: dateStr, work: code || '' }),
+      });
+    } catch (err) { console.warn('근무 저장 실패', err); }
+    finally { pendingWorkSaves.delete(dateStr); }
+  }
+  // 다른 기기에서 이미 구글시트에 저장해둔 오늘 기록이 있으면, 이 기기에 아직 로컬 기록이 없을 때만 가져와서 채움
+  async function hydrateTodayFromSheets_() {
+    if (!SHEETS_URL || hasLocalToday_) return;
+    try {
+      const rows = await fetchSheetRows_(5);
+      const row = rows && rows.find(r => r.date === todayISO);
+      if (!row) return;
+      if (row.weight != null && row.weight !== '') state.weight = row.weight;
+      if (row.waist != null && row.waist !== '') state.waist = row.waist;
+      if (row.thigh != null && row.thigh !== '') state.thigh = row.thigh;
+      if (row.hip != null && row.hip !== '') state.hip = row.hip;
+      if (row.skipMeasure) state.skipMeasure = true;
+      if (row.sleep != null && row.sleep !== '') state.sleep = row.sleep;
+      if (row.bowel === '배변함') state.bowel = true;
+      else if (row.bowel === '배변안함') state.bowel = false;
+      if (row.tags) state.tags = String(row.tags).split(',').filter(Boolean);
+      if (row.note) state.note = row.note;
+      if (row.meals) { state.meals = row.meals; Object.values(state.meals).forEach(items => items.forEach(ensureItemFields_)); }
+      if (row.exercises && row.exercises.length) state.exercises = row.exercises;
+      if (row.scheduleItems && row.scheduleItems.length) state.scheduleItems = row.scheduleItems;
+      saveState();
+      render();
+      renderCalendar();
+    } catch (e) { console.warn('오늘 기록 불러오기 실패', e); }
+  }
   function currentModalItems_() {
     const rec = calDataByDate[currentModalDate];
     return (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
@@ -2009,12 +2060,15 @@
     const btn = e.target.closest('.work-pick-btn');
     if (!btn || !currentModalDate) return;
     const code = btn.dataset.code;
+    let newCode = code;
     if (!code || workShifts[currentModalDate] === code) {
       delete workShifts[currentModalDate];
+      newCode = '';
     } else {
       workShifts[currentModalDate] = code;
     }
     saveWorkShifts_();
+    saveWorkForDate_(currentModalDate, newCode);
     renderDayModalWork_(currentModalDate, new Date(currentModalDate + 'T00:00:00'));
     renderCalendar();
   });
@@ -2128,6 +2182,7 @@
 
   render();
   renderCalendar();
+  hydrateTodayFromSheets_();
 })();
 </script>
 </body>

@@ -4,7 +4,7 @@
 var SHEET_NAME = '기록';
 var TOKEN = '여기에-원하는-비밀번호처럼-긴-문자열을-넣으세요'; // 예: diet-8x3kQ9zL2m
 
-var HEADERS = ['날짜','체중','허리둘레','허벅지둘레','골반둘레','측정건너뜀','섭취칼로리','탄수화물','단백질','지방','단순당','운동소모칼로리','순섭취칼로리','수면시간','배변','특이사항태그','메모','식사상세JSON','운동상세JSON','일정'];
+var HEADERS = ['날짜','체중','허리둘레','허벅지둘레','골반둘레','측정건너뜀','섭취칼로리','탄수화물','단백질','지방','단순당','운동소모칼로리','순섭취칼로리','수면시간','배변','특이사항태그','메모','식사상세JSON','운동상세JSON','일정','근무'];
 
 function getSheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -14,6 +14,12 @@ function getSheet_() {
   }
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
+  } else {
+    // 예전에 만든 시트는 '근무' 칸이 없을 수 있으니 헤더 비교해서 있으면 추가
+    var existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (existingHeaders.indexOf('근무') === -1) {
+      sheet.getRange(1, existingHeaders.length + 1).setValue('근무');
+    }
   }
   return sheet;
 }
@@ -46,11 +52,18 @@ function parseScheduleItems_(v) {
   return [String(v)];
 }
 
+function parseJsonOr_(v, fallback) {
+  if (!v) return fallback;
+  try { return JSON.parse(v); } catch (e) { return fallback; }
+}
+
 function rowToObject_(r) {
   return {
     date: formatDate_(r[0]), weight: r[1], waist: r[2], thigh: r[3], hip: r[4], skipMeasure: r[5],
     kcal: r[6], carb: r[7], prot: r[8], fat: r[9], sugar: r[10], burn: r[11], net: r[12],
-    sleep: r[13], bowel: r[14], tags: r[15], note: r[16], scheduleItems: parseScheduleItems_(r[19])
+    sleep: r[13], bowel: r[14], tags: r[15], note: r[16],
+    meals: parseJsonOr_(r[17], {}), exercises: parseJsonOr_(r[18], []),
+    scheduleItems: parseScheduleItems_(r[19]), work: r[20] || ''
   };
 }
 
@@ -77,19 +90,36 @@ function doGet(e) {
   }
 }
 
+function findRowIndex_(data, dateStr) {
+  for (var i = 1; i < data.length; i++) {
+    if (formatDate_(data[i][0]) === dateStr) return i + 1;
+  }
+  return -1;
+}
+
 // 일정 칸 하나만 업데이트 (그 날의 다른 기록은 건드리지 않음)
 function setScheduleOnly_(sheet, payload) {
   var data = sheet.getDataRange().getValues();
-  var rowIndex = -1;
-  for (var i = 1; i < data.length; i++) {
-    if (formatDate_(data[i][0]) === payload.date) { rowIndex = i + 1; break; }
-  }
+  var rowIndex = findRowIndex_(data, payload.date);
   if (rowIndex === -1) {
     rowIndex = sheet.getLastRow() + 1;
     sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
   }
-  var scheduleCol = HEADERS.length; // 일정은 마지막 칸
+  var scheduleCol = HEADERS.indexOf('일정') + 1;
   sheet.getRange(rowIndex, scheduleCol).setValue(JSON.stringify(payload.scheduleItems || []));
+  return { ok: true };
+}
+
+// 근무 칸 하나만 업데이트 (그 날의 다른 기록은 건드리지 않음)
+function setWorkOnly_(sheet, payload) {
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = findRowIndex_(data, payload.date);
+  if (rowIndex === -1) {
+    rowIndex = sheet.getLastRow() + 1;
+    sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
+  }
+  var workCol = HEADERS.indexOf('근무') + 1;
+  sheet.getRange(rowIndex, workCol).setValue(payload.work || '');
   return { ok: true };
 }
 
@@ -102,11 +132,14 @@ function doPost(e) {
     if (payload.action === 'schedule') {
       return jsonOutput_(setScheduleOnly_(sheet, payload));
     }
-    var data = sheet.getDataRange().getValues();
-    var rowIndex = -1;
-    for (var i = 1; i < data.length; i++) {
-      if (formatDate_(data[i][0]) === payload.date) { rowIndex = i + 1; break; }
+    if (payload.action === 'work') {
+      return jsonOutput_(setWorkOnly_(sheet, payload));
     }
+    var data = sheet.getDataRange().getValues();
+    var rowIndex = findRowIndex_(data, payload.date);
+    var existingRow = rowIndex !== -1 ? data[rowIndex - 1] : null;
+    // 근무 칸은 이 저장 경로가 모르는 값이니, 이미 있던 값을 그대로 유지
+    var workValue = payload.work != null ? payload.work : (existingRow ? existingRow[HEADERS.indexOf('근무')] : '');
     var row = [
       payload.date,
       payload.weight != null ? payload.weight : '',
@@ -127,7 +160,8 @@ function doPost(e) {
       payload.note || '',
       JSON.stringify(payload.meals || {}),
       JSON.stringify(payload.exercises || []),
-      JSON.stringify(payload.scheduleItems || [])
+      JSON.stringify(payload.scheduleItems || []),
+      workValue || ''
     ];
     if (rowIndex === -1) {
       rowIndex = sheet.getLastRow() + 1;
