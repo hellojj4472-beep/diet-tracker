@@ -1,0 +1,15 @@
+{
+  "name": "일정관리",
+  "short_name": "일정관리",
+  "description": "식사·운동·수면·배변·근무표·일정을 한 화면에서 기록하는 개인용 트래커",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F1EEE6",
+  "theme_color": "#1F6F5C",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
