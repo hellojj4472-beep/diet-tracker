@@ -685,6 +685,7 @@
           <span class="recurring-label">종료일(선택)</span>
           <input type="date" id="recurEndDate">
           <label class="recur-work-toggle"><input type="checkbox" id="recurIsWork"> 근무로 등록</label>
+          <label class="recur-work-toggle"><input type="checkbox" id="recurExcludeHolidays"> 공휴일 제외</label>
           <input type="text" id="recurText" placeholder="예: 화분 물주기">
           <span class="emoji-picker-row" id="recurEmojiRow"></span>
           <span id="recurWorkPicker" class="work-btn-row" style="display:none;"></span>
@@ -1512,11 +1513,10 @@
   }
 
   function ruleMatchesDate_(r, dateObj) {
-    if (r.startDate || r.endDate) {
-      const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-      if (r.startDate && dStr < r.startDate) return false;
-      if (r.endDate && dStr > r.endDate) return false;
-    }
+    const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    if (r.startDate && dStr < r.startDate) return false;
+    if (r.endDate && dStr > r.endDate) return false;
+    if (r.excludeHolidays && KR_HOLIDAYS[dStr]) return false;
     const dow = dateObj.getDay(), dom = dateObj.getDate();
     if (r.type === 'weekly') return r.dow === dow;
     if (r.type === 'monthly') return r.day === dom;
@@ -1659,6 +1659,7 @@
       else label = `${r.startDate}부터 ${r.intervalWeeks}주마다`;
       if (r.type !== 'interval' && r.startDate) label = `${r.startDate}부터 ` + label;
       if (r.endDate) label += ` (~${r.endDate})`;
+      if (r.excludeHolidays) label += ' · 공휴일 제외';
       const desc = r.isWork ? `근무(${escAttr_(r.text)})` : escAttr_(r.text);
       return `<div class="recurring-item"><span>${label} · ${desc}</span><button type="button" class="recurring-del" data-idx="${i}">×</button></div>`;
     }).join('');
@@ -1750,7 +1751,8 @@
     const type = $('#recurType').value;
     const id = Date.now() + '_' + Math.random().toString(36).slice(2);
     const endDate = $('#recurEndDate').value || undefined;
-    const workFields = Object.assign({}, isWork ? { isWork: true, workCode: selectedRecurWorkCode } : {}, endDate ? { endDate } : {});
+    const excludeHolidays = $('#recurExcludeHolidays').checked;
+    const workFields = Object.assign({}, isWork ? { isWork: true, workCode: selectedRecurWorkCode } : {}, endDate ? { endDate } : {}, excludeHolidays ? { excludeHolidays: true } : {});
     if (type === 'interval') {
       const startDate = $('#recurStartDate').value;
       const intervalWeeks = parseInt($('#recurIntervalWeeks').value) || 1;
@@ -1767,6 +1769,7 @@
     $('#recurText').value = '';
     $('#recurEndDate').value = '';
     $('#recurStartDateGeneral').value = '';
+    $('#recurExcludeHolidays').checked = false;
     selectedRecurWorkCode = null;
     $$('.work-pick-btn', $('#recurWorkPicker')).forEach(b => b.classList.remove('active'));
   });
