@@ -154,8 +154,11 @@ function doPost(e) {
     var data = sheet.getDataRange().getValues();
     var rowIndex = findRowIndex_(data, payload.date);
     var existingRow = rowIndex !== -1 ? data[rowIndex - 1] : null;
-    // 근무 칸은 이 저장 경로가 모르는 값이니, 이미 있던 값을 그대로 유지
+    // 근무/일정 칸은 각각 실시간으로 따로 저장되니, 이 저장 경로에서 값을 안 보내주면 이미 있던 값을 그대로 유지
     var workValue = payload.work != null ? payload.work : (existingRow ? existingRow[HEADERS.indexOf('근무')] : '');
+    var scheduleValue = payload.scheduleItems !== undefined
+      ? JSON.stringify(payload.scheduleItems)
+      : (existingRow ? existingRow[HEADERS.indexOf('일정')] : JSON.stringify([]));
     var row = [
       payload.date,
       payload.weight != null ? payload.weight : '',
@@ -176,7 +179,7 @@ function doPost(e) {
       payload.note || '',
       JSON.stringify(payload.meals || {}),
       JSON.stringify(payload.exercises || []),
-      JSON.stringify(payload.scheduleItems || []),
+      scheduleValue,
       workValue || ''
     ];
     if (rowIndex === -1) {
