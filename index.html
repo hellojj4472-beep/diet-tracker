@@ -1141,6 +1141,12 @@
       state[id] = e.target.value === '' ? null : parseFloat(e.target.value);
       render();
     });
+    // 입력을 마치고 다른 곳을 누르면(blur) 구글시트에도 바로 반영 — 저장 버튼을 안 눌러도 다른 기기에서 보임
+    input.addEventListener('change', (e) => {
+      const v = e.target.value === '' ? null : parseFloat(e.target.value);
+      if (id === 'weight') saveWeightForDate_(todayISO, v);
+      else saveDayField_(todayISO, id, v);
+    });
   });
   if (state.skipMeasure) {
     $('#morningFields').style.opacity = 0.45;
