@@ -2058,7 +2058,7 @@
   }
 
   function renderDayModalWeight_(dateStr) {
-    const rec = calDataByDate[dateStr];
+    const rec = dayRecordView_(dateStr);
     const w = rec && rec.weight !== '' && rec.weight != null ? rec.weight : '';
     $('#dayModalWeight').innerHTML = '<div class="day-modal-subhead">체중</div><div class="day-modal-weight-row">' +
       `<input type="number" step="0.1" id="dayModalWeightInput" value="${w}" placeholder="예: 52.3">` +
@@ -2078,8 +2078,8 @@
 
   function openDayModal_(dateStr) {
     currentModalDate = dateStr;
-    const rec = calDataByDate[dateStr];
-    const items = (rec && Array.isArray(rec.scheduleItems)) ? rec.scheduleItems.slice() : [];
+    migrateLocalStubIntoDayOverrides_(dateStr);
+    const items = dayRecordView_(dateStr).scheduleItems.slice();
     const d = new Date(dateStr + 'T00:00:00');
     $('#dayModalTitle').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 일정`;
     renderDayModalWork_(dateStr, d);
@@ -2147,13 +2147,85 @@
   }
 
   // ---------- 캘린더 팝업에서 지난 날짜 전체 기록(식사/운동/수면 등) 수정 ----------
+  // 날짜가 바뀌기 전 '오늘 기록'으로 이 브라우저에만 남아있던 데이터(구글시트에 아직 반영 안 됐을 수 있음)
+  function readLocalDayStub_(dateStr) {
+    try {
+      const raw = localStorage.getItem('dietTracker:' + dateStr);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
   function dayRecordView_(dateStr) {
-    const base = calDataByDate[dateStr] || {};
+    const base = Object.assign({}, calDataByDate[dateStr] || {});
+    const stub = dateStr === todayISO ? null : readLocalDayStub_(dateStr);
+    if (stub) {
+      ['weight', 'waist', 'thigh', 'hip', 'sleep', 'note'].forEach(f => {
+        if ((base[f] == null || base[f] === '') && stub[f] != null && stub[f] !== '') base[f] = stub[f];
+      });
+      if (!base.skipMeasure && stub.skipMeasure) base.skipMeasure = true;
+      if ((base.bowel === undefined || base.bowel === null || base.bowel === '') && stub.bowel != null) base.bowel = stub.bowel;
+      if ((!base.tags || (Array.isArray(base.tags) ? !base.tags.length : !base.tags)) && stub.tags && stub.tags.length) base.tags = stub.tags;
+      if (stub.meals) {
+        const mergedMeals = Object.assign({}, base.meals);
+        Object.keys(stub.meals).forEach(m => {
+          const stubItems = stub.meals[m] || [];
+          if (!stubItems.length) return;
+          mergedMeals[m] = mergeItemLists_(mergedMeals[m] || [], stubItems, it => `${it.label || it.name}|${it.qty || 1}|${it.kcal}`);
+        });
+        base.meals = mergedMeals;
+      }
+      if (stub.exercises && stub.exercises.length) {
+        base.exercises = mergeItemLists_(base.exercises || [], stub.exercises, ex => `${ex.name}|${ex.minutes}|${ex.kcal}`);
+      }
+      if ((!base.scheduleItems || !base.scheduleItems.length) && stub.scheduleItems && stub.scheduleItems.length) base.scheduleItems = stub.scheduleItems;
+    }
     const override = calDayOverrides[dateStr] || {};
     const merged = Object.assign({}, base, override);
     if (!merged.meals || typeof merged.meals !== 'object') merged.meals = { 아침: [], 점심: [], 간식: [], 저녁: [] };
     if (!Array.isArray(merged.exercises)) merged.exercises = [];
     return merged;
+  }
+  // 지난 날짜 팝업을 열 때, 그 날짜가 '오늘'이었을 때 남긴 로컬 기록을 구글시트에도 실제로 저장해둠 (브라우저 캐시 지우면 사라지니까)
+  function migrateLocalStubIntoDayOverrides_(dateStr) {
+    if (dateStr === todayISO) return;
+    const stub = readLocalDayStub_(dateStr);
+    if (!stub) return;
+    const rec = dayRecordView_(dateStr);
+    if (stub.weight != null && stub.weight !== '' && calDayOverrides[dateStr] === undefined && (calDataByDate[dateStr] || {}).weight == null) {
+      saveWeightForDate_(dateStr, stub.weight);
+    }
+    ['waist', 'thigh', 'hip', 'sleep', 'note'].forEach(f => {
+      const already = (calDataByDate[dateStr] || {})[f];
+      if ((already == null || already === '') && stub[f] != null && stub[f] !== '') saveDayField_(dateStr, f, stub[f]);
+    });
+    if (stub.bowel != null) {
+      const already = (calDataByDate[dateStr] || {}).bowel;
+      if (already == null || already === '') saveDayField_(dateStr, 'bowel', stub.bowel);
+    }
+    if (stub.tags && stub.tags.length) {
+      const already = (calDataByDate[dateStr] || {}).tags;
+      if (!already || !already.length) saveDayField_(dateStr, 'tags', stub.tags);
+    }
+    if (stub.meals) {
+      let mealsChanged = false;
+      const mergedMeals = Object.assign({}, rec.meals);
+      Object.keys(stub.meals).forEach(m => {
+        const stubItems = stub.meals[m] || [];
+        if (!stubItems.length) return;
+        const existing = (calDataByDate[dateStr] && calDataByDate[dateStr].meals && calDataByDate[dateStr].meals[m]) || [];
+        const combined = mergeItemLists_(existing, stubItems, it => `${it.label || it.name}|${it.qty || 1}|${it.kcal}`);
+        if (combined.length !== existing.length) { mergedMeals[m] = combined; mealsChanged = true; }
+      });
+      if (mealsChanged) { saveDayField_(dateStr, 'meals', mergedMeals); recomputeAndSaveDayTotals_(dateStr); }
+    }
+    if (stub.exercises && stub.exercises.length) {
+      const existing = (calDataByDate[dateStr] && calDataByDate[dateStr].exercises) || [];
+      const combined = mergeItemLists_(existing, stub.exercises, ex => `${ex.name}|${ex.minutes}|${ex.kcal}`);
+      if (combined.length !== existing.length) { saveDayField_(dateStr, 'exercises', combined); recomputeAndSaveDayTotals_(dateStr); }
+    }
+    if (stub.scheduleItems && stub.scheduleItems.length) {
+      const existing = (calDataByDate[dateStr] && calDataByDate[dateStr].scheduleItems) || [];
+      if (!existing.length) saveDaySchedule_(dateStr, stub.scheduleItems);
+    }
   }
   async function saveDayField_(dateStr, field, value) {
     calDayOverrides[dateStr] = Object.assign({}, calDayOverrides[dateStr], { [field]: value });
