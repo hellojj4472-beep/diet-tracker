@@ -339,6 +339,39 @@
     background: var(--paper); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px;
   }
   .day-modal-weight-row span { font-size: 12.5px; color: var(--ink-soft); }
+  .day-modal-full-record { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .day-modal-full-record summary { cursor: pointer; font-size: 12.5px; color: var(--ink-soft); }
+  .day-modal-full-record-body { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .dm-measure-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .dm-measure-row label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--ink-soft); }
+  .dm-measure-row input {
+    width: 62px; padding: 6px 7px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; font-size: 12.5px;
+  }
+  .day-modal-full-record #dmNote {
+    width: 100%; min-height: 50px; padding: 8px 10px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; font-size: 13px; resize: vertical;
+  }
+  .dm-meal-add-row { display: flex; gap: 6px; align-items: flex-start; }
+  .dm-meal-add-row select {
+    flex-shrink: 0; width: auto; padding: 8px 8px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; font-size: 12.5px;
+  }
+  .dm-meal-add-row .search-box { flex: 1; position: relative; margin-bottom: 0; }
+  .dm-meal-group-head { font-size: 11px; color: var(--ink-faint); margin-top: 6px; }
+  .dm-meal-item-row {
+    display: flex; justify-content: space-between; align-items: center; padding: 4px 0;
+    border-bottom: 1px solid var(--line); font-size: 12.5px;
+  }
+  .dm-meal-item-row:last-child { border-bottom: none; }
+  .dm-meal-item-row .dm-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 14px; padding: 0 2px; }
+  .dm-meal-item-row .dm-del:hover { color: var(--bad); }
+  .dm-ex-add-row { display: flex; gap: 6px; align-items: center; }
+  .dm-ex-add-row select {
+    flex: 1; padding: 8px 8px; border-radius: var(--radius-s); border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; font-size: 12.5px;
+  }
+  .dm-ex-add-row input { width: 56px; flex-shrink: 0; padding: 6px 7px; }
   .work-btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .work-pick-btn {
     padding: 8px 13px; border-radius: var(--radius-s); border: 1px solid var(--line);
@@ -832,6 +865,62 @@
       <input type="text" id="dayModalInput" placeholder="일정 추가">
       <button type="button" class="btn small" id="dayModalAddBtn">추가</button>
     </div>
+    <details class="day-modal-full-record" id="dayModalFullRecordWrap">
+      <summary>📋 식사·운동·수면 등 전체 기록 수정</summary>
+      <div class="day-modal-full-record-body">
+        <div class="dm-measure-row">
+          <label>허리<input type="number" step="0.1" id="dmWaist"></label>
+          <label>허벅지<input type="number" step="0.1" id="dmThigh"></label>
+          <label>골반<input type="number" step="0.1" id="dmHip"></label>
+          <label>수면(h)<input type="number" step="0.5" id="dmSleep"></label>
+        </div>
+        <div class="day-modal-subhead">배변</div>
+        <div class="work-btn-row" id="dmBowelRow">
+          <button type="button" class="work-pick-btn" data-val="true">배변함</button>
+          <button type="button" class="work-pick-btn" data-val="false">배변안함</button>
+        </div>
+        <div class="day-modal-subhead">특이사항</div>
+        <div class="chip-row" id="dmTagRow"></div>
+        <div class="day-modal-subhead">메모</div>
+        <textarea id="dmNote" placeholder="자유롭게 적어보세요"></textarea>
+        <div class="day-modal-subhead">식사</div>
+        <div id="dmMealLists"></div>
+        <div class="dm-meal-add-row">
+          <select id="dmMealType"></select>
+          <div class="search-box">
+            <input type="text" id="dmFoodSearch" placeholder="음식 검색" autocomplete="off">
+            <div class="search-results" id="dmSearchResults" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="pending-add" id="dmPendingAdd" style="display:none;">
+          <span class="pending-label" id="dmPendingLabel"></span>
+          <input type="number" class="pending-qty" id="dmPendingQty" min="0.1">
+          <span class="pending-unit" id="dmPendingUnit"></span>
+          <button type="button" class="btn small" id="dmConfirmAddBtn">추가</button>
+          <button type="button" class="btn small subtle" id="dmCancelAddBtn">취소</button>
+        </div>
+        <details class="manual-add-toggle">
+          <summary>직접 입력으로 추가</summary>
+          <div class="manual-form">
+            <input type="text" id="dmManualName" placeholder="음식 이름">
+            <div class="manual-grid">
+              <input type="number" id="dmManualCarb" placeholder="탄수화물(g)" min="0">
+              <input type="number" id="dmManualProt" placeholder="단백질(g)" min="0">
+              <input type="number" id="dmManualFat" placeholder="지방(g)" min="0">
+              <input type="number" id="dmManualSugar" placeholder="단순당(g)" min="0">
+            </div>
+            <button type="button" class="btn small" id="dmManualAddBtn">이 끼니에 추가</button>
+          </div>
+        </details>
+        <div class="day-modal-subhead">운동</div>
+        <div id="dmExList"></div>
+        <div class="dm-ex-add-row">
+          <select id="dmExSelect"></select>
+          <input type="number" id="dmExMinutes" placeholder="분" min="0">
+          <button type="button" class="btn small" id="dmExAddBtn">추가</button>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -1799,6 +1888,7 @@
   let calDataByDate = {};
   let calScheduleOverrides = {}; // 방금 수정한 일정을 서버 재조회 전에도 화면에 바로 보여주기 위한 캐시
   let calWeightOverrides = {}; // 방금 캘린더에서 수정한 체중을 서버 재조회 전에도 화면에 바로 보여주기 위한 캐시
+  let calDayOverrides = {}; // 캘린더 팝업에서 수정한 그 날의 식사/운동/수면 등 전체 기록 캐시
 
   async function renderCalendar() {
     const calGrid = $('#calGrid');
@@ -1833,6 +1923,9 @@
     });
     Object.keys(calWeightOverrides).forEach(d => {
       calDataByDate[d] = Object.assign({}, calDataByDate[d], { weight: calWeightOverrides[d] });
+    });
+    Object.keys(calDayOverrides).forEach(d => {
+      calDataByDate[d] = Object.assign({}, calDataByDate[d], calDayOverrides[d]);
     });
 
     renderCycleInfo_();
@@ -1986,6 +2079,11 @@
     renderDayModalLove_(dateStr);
     renderDayModalRecur_(dateStr, d);
     renderDayModalList_(items);
+    renderDayModalFullRecord_(dateStr);
+    $('#dayModalFullRecordWrap').open = false;
+    $('#dmPendingAdd').style.display = 'none';
+    $('#dmFoodSearch').value = '';
+    dmPendingFood = null;
     $('#dayModalInput').value = '';
     $('#dayModalOverlay').style.display = 'flex';
     $('#dayModalInput').focus();
@@ -2038,6 +2136,234 @@
       });
     } catch (err) { console.warn('체중 저장 실패', err); }
   }
+
+  // ---------- 캘린더 팝업에서 지난 날짜 전체 기록(식사/운동/수면 등) 수정 ----------
+  function dayRecordView_(dateStr) {
+    const base = calDataByDate[dateStr] || {};
+    const override = calDayOverrides[dateStr] || {};
+    const merged = Object.assign({}, base, override);
+    if (!merged.meals || typeof merged.meals !== 'object') merged.meals = { 아침: [], 점심: [], 간식: [], 저녁: [] };
+    if (!Array.isArray(merged.exercises)) merged.exercises = [];
+    return merged;
+  }
+  async function saveDayField_(dateStr, field, value) {
+    calDayOverrides[dateStr] = Object.assign({}, calDayOverrides[dateStr], { [field]: value });
+    if (dateStr === todayISO) {
+      state[field] = value;
+      saveState();
+      if (field === 'waist') $('#waist').value = value != null ? value : '';
+      else if (field === 'thigh') $('#thigh').value = value != null ? value : '';
+      else if (field === 'hip') $('#hip').value = value != null ? value : '';
+      else if (field === 'sleep') { if (value != null) $('#sleepInput').value = value; }
+      else if (field === 'note') $('#noteInput').value = value || '';
+      else if (field === 'tags') $$('#tagRow .chip').forEach(chip => chip.classList.toggle('tag-selected', value.includes(chip.textContent)));
+      render();
+    }
+    renderCalendar();
+    if (!SHEETS_URL) return;
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'field', date: dateStr, field, value }),
+      });
+    } catch (err) { console.warn('기록 저장 실패', err); }
+  }
+  async function recomputeAndSaveDayTotals_(dateStr) {
+    const rec = dayRecordView_(dateStr);
+    const allItems = MEALS.reduce((acc, m) => acc.concat(rec.meals[m] || []), []);
+    const day = sumMacros(allItems);
+    const burn = rec.exercises.reduce((a, ex) => a + (ex.kcal || 0), 0);
+    const net = day.kcal - burn;
+    const totals = { kcal: day.kcal, carb: day.carb, prot: day.prot, fat: day.fat, sugar: day.sugar, burn, net };
+    calDayOverrides[dateStr] = Object.assign({}, calDayOverrides[dateStr], totals);
+    renderCalendar();
+    if (!SHEETS_URL) return;
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'totals', date: dateStr, totals }),
+      });
+    } catch (err) { console.warn('합계 저장 실패', err); }
+  }
+  function renderDayModalFullRecord_(dateStr) {
+    const rec = dayRecordView_(dateStr);
+    $('#dmWaist').value = rec.waist != null && rec.waist !== '' ? rec.waist : '';
+    $('#dmThigh').value = rec.thigh != null && rec.thigh !== '' ? rec.thigh : '';
+    $('#dmHip').value = rec.hip != null && rec.hip !== '' ? rec.hip : '';
+    $('#dmSleep').value = rec.sleep != null && rec.sleep !== '' ? rec.sleep : '';
+    const bowelVal = (rec.bowel === true || rec.bowel === '배변함') ? true : ((rec.bowel === false || rec.bowel === '배변안함') ? false : null);
+    $$('#dmBowelRow .work-pick-btn').forEach(b => b.classList.toggle('active', String(bowelVal) === b.dataset.val));
+    $('#dmNote').value = rec.note || '';
+    const tags = Array.isArray(rec.tags) ? rec.tags : (rec.tags ? String(rec.tags).split(',').filter(Boolean) : []);
+    $('#dmTagRow').innerHTML = TAGS.map(t => `<button type="button" class="chip${tags.includes(t) ? ' tag-selected' : ''}" data-tag="${escAttr_(t)}">${t}</button>`).join('');
+    const mealsHtml = MEALS.map(meal => {
+      const items = rec.meals[meal] || [];
+      if (!items.length) return '';
+      return `<div class="dm-meal-group-head">${meal}</div>` + items.map((it, idx) =>
+        `<div class="dm-meal-item-row"><span>${escAttr_(it.label || it.name)} · ${it.kcal}kcal</span><button type="button" class="dm-del" data-meal="${meal}" data-idx="${idx}">×</button></div>`
+      ).join('');
+    }).join('');
+    $('#dmMealLists').innerHTML = mealsHtml || '<div class="empty-row">아직 추가된 식사가 없어요</div>';
+    $('#dmExList').innerHTML = rec.exercises.length
+      ? rec.exercises.map((ex, idx) => `<div class="dm-meal-item-row"><span>${escAttr_(ex.name)} · ${ex.minutes}분 · -${ex.kcal}kcal</span><button type="button" class="dm-del" data-exidx="${idx}">×</button></div>`).join('')
+      : '<div class="empty-row">아직 추가된 운동이 없어요</div>';
+  }
+  $('#dmMealType').innerHTML = MEALS.map(m => `<option value="${m}">${m}</option>`).join('');
+  const dmExPlaceholder = document.createElement('option');
+  dmExPlaceholder.value = ''; dmExPlaceholder.textContent = '선택';
+  dmExPlaceholder.disabled = true; dmExPlaceholder.selected = true;
+  $('#dmExSelect').appendChild(dmExPlaceholder);
+  EXERCISES.forEach(ex => {
+    const o = document.createElement('option');
+    o.value = ex.met; o.textContent = `${ex.name} (MET ${ex.met})`;
+    o.dataset.name = ex.name;
+    $('#dmExSelect').appendChild(o);
+  });
+  function addFoodToDayMeal_(dateStr, meal, food, qty) {
+    const rec = dayRecordView_(dateStr);
+    const scale = qty / food.baseAmount;
+    const item = {
+      label: food.label, qty, unitLabel: food.unitLabel,
+      perCarb: food.carb / food.baseAmount, perProt: food.prot / food.baseAmount,
+      perFat: food.fat / food.baseAmount, perSugar: food.sugar / food.baseAmount,
+      perKcal: food.kcal / food.baseAmount,
+      name: `${food.label} ${qty}${food.unitLabel}`,
+      carb: round1(food.carb * scale), prot: round1(food.prot * scale),
+      fat: round1(food.fat * scale), sugar: round1(food.sugar * scale),
+      kcal: Math.round(food.kcal * scale),
+    };
+    const meals = Object.assign({}, rec.meals);
+    meals[meal] = (meals[meal] || []).concat([item]);
+    saveDayField_(dateStr, 'meals', meals);
+    recomputeAndSaveDayTotals_(dateStr);
+    renderDayModalFullRecord_(dateStr);
+  }
+  $('#dmFoodSearch').addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    const resultsEl = $('#dmSearchResults');
+    if (!q) { resultsEl.style.display = 'none'; return; }
+    const allMatches = FOOD_DB.filter(f => f.label.includes(q));
+    const matches = allMatches.slice(0, 25);
+    resultsEl.innerHTML = matches.length
+      ? matches.map(f => `<button type="button" data-food="${f.label}"><span>${foodDisplayBase(f)}</span><span class="macro">${f.kcal}kcal · 탄수화물${f.carb} 단백질${f.prot} 지방${f.fat}</span></button>`).join('') +
+        (allMatches.length > matches.length ? `<div class="empty-row">${allMatches.length - matches.length}개 더 있어요 · 좀 더 구체적으로 입력해보세요</div>` : '')
+      : '<div class="empty-row">검색 결과 없음 — 직접 입력을 이용해보세요</div>';
+    resultsEl.style.display = 'block';
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#dmFoodSearch') && !e.target.closest('#dmSearchResults')) $('#dmSearchResults').style.display = 'none';
+  });
+  let dmPendingFood = null;
+  $('#dmSearchResults').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-food]');
+    if (!btn) return;
+    const food = FOOD_DB.find(f => f.label === btn.dataset.food);
+    if (!food) return;
+    dmPendingFood = food;
+    $('#dmPendingAdd').style.display = 'flex';
+    $('#dmPendingLabel').textContent = food.label;
+    $('#dmPendingUnit').textContent = food.unitLabel;
+    $('#dmPendingQty').value = food.baseAmount;
+    $('#dmPendingQty').step = food.type === 'weight' ? 10 : 1;
+    $('#dmSearchResults').style.display = 'none';
+    $('#dmFoodSearch').value = '';
+  });
+  $('#dmCancelAddBtn').addEventListener('click', () => { $('#dmPendingAdd').style.display = 'none'; dmPendingFood = null; });
+  $('#dmConfirmAddBtn').addEventListener('click', () => {
+    const qty = parseFloat($('#dmPendingQty').value);
+    if (!dmPendingFood || !(qty > 0) || !currentModalDate) return;
+    addFoodToDayMeal_(currentModalDate, $('#dmMealType').value, dmPendingFood, qty);
+    $('#dmPendingAdd').style.display = 'none';
+    dmPendingFood = null;
+  });
+  $('#dmManualAddBtn').addEventListener('click', () => {
+    const name = $('#dmManualName').value.trim();
+    if (!name || !currentModalDate) return;
+    const carb = parseFloat($('#dmManualCarb').value) || 0;
+    const prot = parseFloat($('#dmManualProt').value) || 0;
+    const fat = parseFloat($('#dmManualFat').value) || 0;
+    const sugar = parseFloat($('#dmManualSugar').value) || 0;
+    const kcal = Math.round(carb * 4 + prot * 4 + fat * 9);
+    const rec = dayRecordView_(currentModalDate);
+    const meals = Object.assign({}, rec.meals);
+    const meal = $('#dmMealType').value;
+    meals[meal] = (meals[meal] || []).concat([{ label: name, qty: 1, unitLabel: '회', perCarb: carb, perProt: prot, perFat: fat, perSugar: sugar, perKcal: kcal, name, carb, prot, fat, sugar, kcal }]);
+    saveDayField_(currentModalDate, 'meals', meals);
+    recomputeAndSaveDayTotals_(currentModalDate);
+    renderDayModalFullRecord_(currentModalDate);
+    $('#dmManualName').value = '';
+    ['#dmManualCarb', '#dmManualProt', '#dmManualFat', '#dmManualSugar'].forEach(s => $(s).value = '');
+  });
+  $('#dmMealLists').addEventListener('click', (e) => {
+    const btn = e.target.closest('.dm-del');
+    if (!btn || !currentModalDate) return;
+    const meal = btn.dataset.meal, idx = parseInt(btn.dataset.idx);
+    const rec = dayRecordView_(currentModalDate);
+    const meals = Object.assign({}, rec.meals);
+    meals[meal] = (meals[meal] || []).slice();
+    meals[meal].splice(idx, 1);
+    saveDayField_(currentModalDate, 'meals', meals);
+    recomputeAndSaveDayTotals_(currentModalDate);
+    renderDayModalFullRecord_(currentModalDate);
+  });
+  $('#dmExList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.dm-del');
+    if (!btn || !currentModalDate) return;
+    const idx = parseInt(btn.dataset.exidx);
+    const rec = dayRecordView_(currentModalDate);
+    const exercises = rec.exercises.slice();
+    exercises.splice(idx, 1);
+    saveDayField_(currentModalDate, 'exercises', exercises);
+    recomputeAndSaveDayTotals_(currentModalDate);
+    renderDayModalFullRecord_(currentModalDate);
+  });
+  $('#dmExAddBtn').addEventListener('click', () => {
+    if (!$('#dmExSelect').value || !currentModalDate) return;
+    const met = parseFloat($('#dmExSelect').value);
+    const name = $('#dmExSelect').selectedOptions[0].dataset.name;
+    const minutes = parseFloat($('#dmExMinutes').value) || 0;
+    if (minutes <= 0) return;
+    const rec = dayRecordView_(currentModalDate);
+    const weight = rec.weight || state.weight || 60;
+    const kcal = Math.round((met * 3.5 * weight / 200) * minutes);
+    const exercises = rec.exercises.concat([{ name, minutes, kcal }]);
+    saveDayField_(currentModalDate, 'exercises', exercises);
+    recomputeAndSaveDayTotals_(currentModalDate);
+    renderDayModalFullRecord_(currentModalDate);
+    $('#dmExMinutes').value = '';
+    $('#dmExSelect').value = '';
+  });
+  $('#dmBowelRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('.work-pick-btn');
+    if (!btn || !currentModalDate) return;
+    saveDayField_(currentModalDate, 'bowel', btn.dataset.val === 'true');
+    renderDayModalFullRecord_(currentModalDate);
+  });
+  $('#dmTagRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip');
+    if (!btn || !currentModalDate) return;
+    const rec = dayRecordView_(currentModalDate);
+    const tags = (Array.isArray(rec.tags) ? rec.tags : []).slice();
+    const tag = btn.dataset.tag;
+    const i = tags.indexOf(tag);
+    if (i === -1) tags.push(tag); else tags.splice(i, 1);
+    saveDayField_(currentModalDate, 'tags', tags);
+    renderDayModalFullRecord_(currentModalDate);
+  });
+  [['dmWaist', 'waist'], ['dmThigh', 'thigh'], ['dmHip', 'hip'], ['dmSleep', 'sleep']].forEach(([id, field]) => {
+    $('#' + id).addEventListener('change', (e) => {
+      if (!currentModalDate) return;
+      const v = e.target.value.trim();
+      saveDayField_(currentModalDate, field, v === '' ? null : parseFloat(v));
+    });
+  });
+  $('#dmNote').addEventListener('change', (e) => {
+    if (!currentModalDate) return;
+    saveDayField_(currentModalDate, 'note', e.target.value);
+  });
+
   // 다른 기기에서 이미 구글시트에 저장해둔 오늘 기록 중, 이 기기에 아직 비어있는 항목만 채워넣음 (이미 입력한 항목은 안 건드림)
   async function hydrateTodayFromSheets_() {
     if (!SHEETS_URL) return;

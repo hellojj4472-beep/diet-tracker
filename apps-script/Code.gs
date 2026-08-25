@@ -136,6 +136,52 @@ function setWorkOnly_(sheet, payload) {
   return { ok: true };
 }
 
+// 지난 날짜 팝업에서 개별 항목(허리/허벅지/골반/수면/배변/특이사항/메모/식사/운동) 하나만 업데이트
+var FIELD_TO_HEADER = {
+  waist: '허리둘레', thigh: '허벅지둘레', hip: '골반둘레',
+  sleep: '수면시간', bowel: '배변', tags: '특이사항태그', note: '메모',
+  meals: '식사상세JSON', exercises: '운동상세JSON'
+};
+function setFieldOnly_(sheet, payload) {
+  var header = FIELD_TO_HEADER[payload.field];
+  if (!header) return { ok: false, error: 'unknown field' };
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = findRowIndex_(data, payload.date);
+  if (rowIndex === -1) {
+    rowIndex = sheet.getLastRow() + 1;
+    sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
+  }
+  var col = HEADERS.indexOf(header) + 1;
+  var value = payload.value;
+  if (payload.field === 'meals') value = JSON.stringify(value || {});
+  else if (payload.field === 'exercises') value = JSON.stringify(value || []);
+  else if (payload.field === 'bowel') value = value === true ? '배변함' : (value === false ? '배변안함' : '');
+  else if (payload.field === 'tags') value = (value || []).join(',');
+  else value = value != null ? value : '';
+  sheet.getRange(rowIndex, col).setValue(value);
+  return { ok: true };
+}
+
+// 지난 날짜 팝업에서 식사/운동을 고치면 칼로리 합계 칸도 같이 갱신
+function setTotalsOnly_(sheet, payload) {
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = findRowIndex_(data, payload.date);
+  if (rowIndex === -1) {
+    rowIndex = sheet.getLastRow() + 1;
+    sheet.getRange(rowIndex, 1).setNumberFormat('@').setValue(payload.date);
+  }
+  var t = payload.totals || {};
+  var fields = [
+    ['섭취칼로리', t.kcal], ['탄수화물', t.carb], ['단백질', t.prot], ['지방', t.fat],
+    ['단순당', t.sugar], ['운동소모칼로리', t.burn], ['순섭취칼로리', t.net]
+  ];
+  fields.forEach(function (pair) {
+    var col = HEADERS.indexOf(pair[0]) + 1;
+    sheet.getRange(rowIndex, col).setValue(pair[1] || 0);
+  });
+  return { ok: true };
+}
+
 // 오늘 기록 저장/갱신: POST JSON body { token, date, weight, ... }
 function doPost(e) {
   // 여러 요청이 동시에 들어오면 같은 날짜에 중복 행이 생길 수 있어서, 한 번에 하나씩만 처리되도록 잠금
@@ -157,6 +203,12 @@ function doPost(e) {
     }
     if (payload.action === 'weight') {
       return jsonOutput_(setWeightOnly_(sheet, payload));
+    }
+    if (payload.action === 'field') {
+      return jsonOutput_(setFieldOnly_(sheet, payload));
+    }
+    if (payload.action === 'totals') {
+      return jsonOutput_(setTotalsOnly_(sheet, payload));
     }
     var data = sheet.getDataRange().getValues();
     var rowIndex = findRowIndex_(data, payload.date);
