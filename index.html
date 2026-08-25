@@ -358,6 +358,7 @@
   .work-pick-btn.work-off.active { background: var(--ink-faint); color: var(--paper); }
   .work-pick-btn.work-clear { color: var(--ink-faint); font-weight: 400; }
   .recur-work-toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-soft); flex-shrink: 0; }
+  .recurring-checkbox-group { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
   .recur-work-toggle input { width: auto; }
 
   /* ---------- 반복 일정 ---------- */
@@ -686,10 +687,12 @@
             <input type="date" id="recurStartDateGeneral">
           </span>
           <span class="recurring-label">종료일(선택)</span>
-          <input type="date" id="recurEndDate" disabled>
-          <label class="recur-work-toggle"><input type="checkbox" id="recurNoEndDate" checked> 종료일 없음</label>
+          <input type="date" id="recurEndDate">
+          <span class="recurring-checkbox-group">
+            <label class="recur-work-toggle"><input type="checkbox" id="recurNoEndDate"> 종료일 없음</label>
+            <label class="recur-work-toggle"><input type="checkbox" id="recurExcludeHolidays"> 공휴일 제외</label>
+          </span>
           <label class="recur-work-toggle"><input type="checkbox" id="recurIsWork"> 근무로 등록</label>
-          <label class="recur-work-toggle"><input type="checkbox" id="recurExcludeHolidays"> 공휴일 제외</label>
           <input type="text" id="recurText" placeholder="예: 화분 물주기">
           <span class="emoji-picker-row" id="recurEmojiRow"></span>
           <span id="recurWorkPicker" class="work-btn-row" style="display:none;"></span>
@@ -1797,8 +1800,8 @@
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
     $('#recurEndDate').value = '';
-    $('#recurEndDate').disabled = true;
-    $('#recurNoEndDate').checked = true;
+    $('#recurEndDate').disabled = false;
+    $('#recurNoEndDate').checked = false;
     $('#recurStartDateGeneral').value = '';
     $('#recurExcludeHolidays').checked = false;
     selectedRecurWorkCode = null;
