@@ -686,7 +686,8 @@
             <input type="date" id="recurStartDateGeneral">
           </span>
           <span class="recurring-label">종료일(선택)</span>
-          <input type="date" id="recurEndDate">
+          <input type="date" id="recurEndDate" disabled>
+          <label class="recur-work-toggle"><input type="checkbox" id="recurNoEndDate" checked> 종료일 없음</label>
           <label class="recur-work-toggle"><input type="checkbox" id="recurIsWork"> 근무로 등록</label>
           <label class="recur-work-toggle"><input type="checkbox" id="recurExcludeHolidays"> 공휴일 제외</label>
           <input type="text" id="recurText" placeholder="예: 화분 물주기">
@@ -1765,6 +1766,11 @@
     $('#recurText').style.display = isWork ? 'none' : '';
     $('#recurWorkPicker').style.display = isWork ? 'flex' : 'none';
   });
+  $('#recurNoEndDate').addEventListener('change', (e) => {
+    const noEnd = e.target.checked;
+    $('#recurEndDate').disabled = noEnd;
+    if (noEnd) $('#recurEndDate').value = '';
+  });
 
   $('#recurAddBtn').addEventListener('click', () => {
     const isWork = $('#recurIsWork').checked;
@@ -1791,6 +1797,8 @@
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
     $('#recurEndDate').value = '';
+    $('#recurEndDate').disabled = true;
+    $('#recurNoEndDate').checked = true;
     $('#recurStartDateGeneral').value = '';
     $('#recurExcludeHolidays').checked = false;
     selectedRecurWorkCode = null;
