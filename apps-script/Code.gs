@@ -138,6 +138,13 @@ function setWorkOnly_(sheet, payload) {
 
 // 오늘 기록 저장/갱신: POST JSON body { token, date, weight, ... }
 function doPost(e) {
+  // 여러 요청이 동시에 들어오면 같은 날짜에 중복 행이 생길 수 있어서, 한 번에 하나씩만 처리되도록 잠금
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (err) {
+    return jsonOutput_({ ok: false, error: 'busy, try again' });
+  }
   try {
     var payload = JSON.parse(e.postData.contents);
     checkToken_(payload.token);
@@ -189,5 +196,7 @@ function doPost(e) {
     return jsonOutput_({ ok: true });
   } catch (err) {
     return jsonOutput_({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
   }
 }
