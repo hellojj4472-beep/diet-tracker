@@ -696,10 +696,8 @@
             <label class="recur-work-toggle"><input type="checkbox" id="recurExcludeHolidays"> 공휴일 제외</label>
           </span>
           <div class="recurring-line-break"></div>
-          <label class="recur-work-toggle"><input type="checkbox" id="recurIsWork"> 근무로 등록</label>
           <input type="text" id="recurText" placeholder="예: 화분 물주기">
           <span class="emoji-picker-row" id="recurEmojiRow"></span>
-          <span id="recurWorkPicker" class="work-btn-row" style="display:none;"></span>
           <button type="button" class="btn small" id="recurAddBtn">추가</button>
         </div>
         <div class="recurring-list" id="recurringList"></div>
@@ -1755,24 +1753,6 @@
   renderEmojiRow_('#dayModalEmojiRow', () => dayModalActiveInput || $('#dayModalInput'));
   renderEmojiRow_('#recurEmojiRow', () => $('#recurText'));
 
-  let selectedRecurWorkCode = null;
-  function renderRecurWorkPicker_() {
-    $('#recurWorkPicker').innerHTML = Object.keys(WORK_CODES).map(code =>
-      `<button type="button" class="work-pick-btn ${WORK_CODES[code].cls}" data-code="${code}">${WORK_CODES[code].label}</button>`
-    ).join('');
-  }
-  renderRecurWorkPicker_();
-  $('#recurWorkPicker').addEventListener('click', (e) => {
-    const btn = e.target.closest('.work-pick-btn');
-    if (!btn) return;
-    selectedRecurWorkCode = btn.dataset.code;
-    $$('.work-pick-btn', $('#recurWorkPicker')).forEach(b => b.classList.toggle('active', b === btn));
-  });
-  $('#recurIsWork').addEventListener('change', (e) => {
-    const isWork = e.target.checked;
-    $('#recurText').style.display = isWork ? 'none' : '';
-    $('#recurWorkPicker').style.display = isWork ? 'flex' : 'none';
-  });
   $('#recurNoEndDate').addEventListener('change', (e) => {
     const noEnd = e.target.checked;
     $('#recurEndDate').disabled = noEnd;
@@ -1780,26 +1760,24 @@
   });
 
   $('#recurAddBtn').addEventListener('click', () => {
-    const isWork = $('#recurIsWork').checked;
-    if (isWork && !selectedRecurWorkCode) return;
-    const text = isWork ? WORK_CODES[selectedRecurWorkCode].label : $('#recurText').value.trim();
+    const text = $('#recurText').value.trim();
     if (!text) return;
     const type = $('#recurType').value;
     const id = Date.now() + '_' + Math.random().toString(36).slice(2);
     const endDate = $('#recurEndDate').value || undefined;
     const excludeHolidays = $('#recurExcludeHolidays').checked;
-    const workFields = Object.assign({}, isWork ? { isWork: true, workCode: selectedRecurWorkCode } : {}, endDate ? { endDate } : {}, excludeHolidays ? { excludeHolidays: true } : {});
+    const extraFields = Object.assign({}, endDate ? { endDate } : {}, excludeHolidays ? { excludeHolidays: true } : {});
     if (type === 'interval') {
       const startDate = $('#recurStartDate').value;
       const intervalWeeks = parseInt($('#recurIntervalWeeks').value) || 1;
       if (!startDate) { $('#recurStartDate').focus(); return; }
-      recurringSchedules.push(Object.assign({ id, type, startDate, intervalWeeks, text }, workFields));
+      recurringSchedules.push(Object.assign({ id, type, startDate, intervalWeeks, text }, extraFields));
     } else {
       const value = parseInt($('#recurValue').value);
       const generalStartDate = $('#recurStartDateGeneral').value || undefined;
       const rule = type === 'weekly' ? { id, type, dow: value, text } : { id, type, day: value, text };
       if (generalStartDate) rule.startDate = generalStartDate;
-      recurringSchedules.push(Object.assign(rule, workFields));
+      recurringSchedules.push(Object.assign(rule, extraFields));
     }
     saveRecurring_(); renderRecurringList(); renderCalendar();
     $('#recurText').value = '';
@@ -1808,8 +1786,6 @@
     $('#recurNoEndDate').checked = false;
     $('#recurStartDateGeneral').value = '';
     $('#recurExcludeHolidays').checked = false;
-    selectedRecurWorkCode = null;
-    $$('.work-pick-btn', $('#recurWorkPicker')).forEach(b => b.classList.remove('active'));
   });
   $('#recurringList').addEventListener('click', (e) => {
     const btn = e.target.closest('.recurring-del');
