@@ -255,6 +255,7 @@
   .cal-legend .legend-icon.exercise { color: var(--warn); }
   .cal-legend .legend-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
   .cal-legend .legend-swatch.period { background: var(--period-pink); }
+  .cal-legend .legend-swatch.period-predicted { background: transparent; border: 2px dashed var(--period-pink); width: 6px; height: 6px; }
   .cal-legend .legend-swatch.ovulation { background: var(--ovulation-purple); }
 
   .cycle-info {
@@ -302,6 +303,7 @@
   .quick-fill-label b { font-variant-numeric: tabular-nums; }
 
   .cal-cell.period { box-shadow: inset 0 0 0 2px var(--period-pink); }
+  .cal-cell.period-predicted { outline: 2px dashed var(--period-pink); outline-offset: -2px; }
   .cal-cell.ovulation { box-shadow: inset 0 0 0 2px var(--ovulation-purple); }
   .cal-cell.period.ovulation { box-shadow: inset 0 0 0 2px var(--period-pink); }
 
@@ -655,6 +657,7 @@
       <span><i class="dot plan"></i>일정</span>
       <span><i class="dot note"></i>메모</span>
       <span><i class="legend-swatch period"></i>생리일</span>
+      <span><i class="legend-swatch period-predicted"></i>생리 예정일</span>
       <span><i class="legend-swatch ovulation"></i>배란 예상일</span>
       <span><i class="legend-icon" style="color:var(--love-red);font-size:12px;">♥</i>사랑</span>
       <span>· D/학회/오프는 날짜 옆에 표시</span>
@@ -1496,6 +1499,26 @@
     const next = predictNextPeriod_();
     return next ? addDays_(next, -14) : null;
   }
+  function averagePeriodLength_() {
+    const sorted = periodDates.slice().sort();
+    const runs = [];
+    let runStart = null, prev = null;
+    sorted.forEach(d => {
+      if (!prev || daysBetween_(prev, d) > 1) { if (runStart) runs.push(daysBetween_(runStart, prev) + 1); runStart = d; }
+      prev = d;
+    });
+    if (runStart) runs.push(daysBetween_(runStart, prev) + 1);
+    if (!runs.length) return 5; // 데이터 부족하면 평균값(5일)으로 추정
+    return Math.round(runs.reduce((a, b) => a + b, 0) / runs.length);
+  }
+  function predictedPeriodDates_() {
+    const next = predictNextPeriod_();
+    if (!next) return [];
+    const len = averagePeriodLength_();
+    const dates = [];
+    for (let i = 0; i < len; i++) dates.push(addDays_(next, i));
+    return dates;
+  }
   function renderCycleInfo_() {
     const el = $('#cycleInfo');
     if (!periodDates.length) {
@@ -1823,6 +1846,7 @@
 
     renderCycleInfo_();
     const ovulationEstimate = predictOvulation_();
+    const predictedPeriod = predictedPeriodDates_();
 
     let html = '';
     DOW_NAMES.forEach((d, i) => { html += `<div class="cal-dow${i === 0 ? ' red-day' : ''}">${d}</div>`; });
@@ -1834,14 +1858,16 @@
       const rec = calDataByDate[dateStr];
       const isToday = dateStr === todayISO;
       const isPeriodDay = periodDates.includes(dateStr);
+      const isPredictedPeriodDay = !isPeriodDay && predictedPeriod.includes(dateStr);
       const isOvulationDay = ovulationEstimate === dateStr;
       const dayWorkCode = getWorkForDate_(dateStr, dayDateObj);
       const isWorkDay = !!dayWorkCode && dayWorkCode !== 'off' && dayWorkCode !== 'e' && dayWorkCode !== 'p';
       const isEDay = dayWorkCode === 'e';
       const isPDay = dayWorkCode === 'p';
       const inner = buildCellInner_(d, dateStr, dayDateObj, rec);
-      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isEDay ? ' work-e-day' : '') + (isPDay ? ' work-p-day' : '');
-      html += `<div class="${cellCls}" data-date="${dateStr}"${isOvulationDay ? ' title="배란 예상일 (추정)"' : ''}>${inner}</div>`;
+      const cellCls = 'cal-cell' + (isToday ? ' today' : '') + (isPeriodDay ? ' period' : '') + (isPredictedPeriodDay ? ' period-predicted' : '') + (isOvulationDay ? ' ovulation' : '') + (isWorkDay ? ' work-day' : '') + (isEDay ? ' work-e-day' : '') + (isPDay ? ' work-p-day' : '');
+      const titleAttr = isOvulationDay ? ' title="배란 예상일 (추정)"' : (isPredictedPeriodDay ? ' title="생리 예정일 (추정)"' : '');
+      html += `<div class="${cellCls}" data-date="${dateStr}"${titleAttr}>${inner}</div>`;
     }
     calGrid.innerHTML = html;
   }
