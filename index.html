@@ -981,10 +981,9 @@
   };
 
   // 오늘 날짜로 이미 저장된 기록이 있으면 복원 (브라우저 로컬 저장 · 새로고침 대비)
-  let hasLocalToday_ = false;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) { Object.assign(state, JSON.parse(saved)); hasLocalToday_ = true; }
+    if (saved) Object.assign(state, JSON.parse(saved));
   } catch (e) { /* localStorage 사용 불가 시 조용히 무시 */ }
 
   // 예전 버전(수량 조절 기능 이전)에 저장된 항목도 수량 조절 가능하도록 보정
@@ -2019,26 +2018,51 @@
       });
     } catch (err) { console.warn('체중 저장 실패', err); }
   }
-  // 다른 기기에서 이미 구글시트에 저장해둔 오늘 기록이 있으면, 이 기기에 아직 로컬 기록이 없을 때만 가져와서 채움
+  // 다른 기기에서 이미 구글시트에 저장해둔 오늘 기록 중, 이 기기에 아직 비어있는 항목만 채워넣음 (이미 입력한 항목은 안 건드림)
   async function hydrateTodayFromSheets_() {
-    if (!SHEETS_URL || hasLocalToday_) return;
+    if (!SHEETS_URL) return;
     try {
       const rows = await fetchSheetRows_(5);
       const row = rows && rows.find(r => r.date === todayISO);
       if (!row) return;
-      if (row.weight != null && row.weight !== '') state.weight = row.weight;
-      if (row.waist != null && row.waist !== '') state.waist = row.waist;
-      if (row.thigh != null && row.thigh !== '') state.thigh = row.thigh;
-      if (row.hip != null && row.hip !== '') state.hip = row.hip;
-      if (row.skipMeasure) state.skipMeasure = true;
-      if (row.sleep != null && row.sleep !== '') state.sleep = row.sleep;
-      if (row.bowel === '배변함') state.bowel = true;
-      else if (row.bowel === '배변안함') state.bowel = false;
-      if (row.tags) state.tags = String(row.tags).split(',').filter(Boolean);
-      if (row.note) state.note = row.note;
-      if (row.meals) { state.meals = row.meals; Object.values(state.meals).forEach(items => items.forEach(ensureItemFields_)); }
-      if (row.exercises && row.exercises.length) state.exercises = row.exercises;
-      if (row.scheduleItems && row.scheduleItems.length) state.scheduleItems = row.scheduleItems;
+      let changed = false;
+      if (state.weight == null && row.weight != null && row.weight !== '') { state.weight = row.weight; changed = true; }
+      if (state.waist == null && row.waist != null && row.waist !== '') { state.waist = row.waist; changed = true; }
+      if (state.thigh == null && row.thigh != null && row.thigh !== '') { state.thigh = row.thigh; changed = true; }
+      if (state.hip == null && row.hip != null && row.hip !== '') { state.hip = row.hip; changed = true; }
+      if (!state.skipMeasure && row.skipMeasure) { state.skipMeasure = true; changed = true; }
+      if (state.sleep == null && row.sleep != null && row.sleep !== '') { state.sleep = row.sleep; changed = true; }
+      if (state.bowel === null) {
+        if (row.bowel === '배변함') { state.bowel = true; changed = true; }
+        else if (row.bowel === '배변안함') { state.bowel = false; changed = true; }
+      }
+      if ((!state.tags || !state.tags.length) && row.tags) { state.tags = String(row.tags).split(',').filter(Boolean); changed = true; }
+      if (!state.note && row.note) { state.note = row.note; changed = true; }
+      if (row.meals) {
+        Object.keys(row.meals).forEach(mealName => {
+          const localItems = state.meals[mealName];
+          const serverItems = row.meals[mealName];
+          if ((!localItems || !localItems.length) && serverItems && serverItems.length) {
+            serverItems.forEach(ensureItemFields_);
+            state.meals[mealName] = serverItems;
+            changed = true;
+          }
+        });
+      }
+      if ((!state.exercises || !state.exercises.length) && row.exercises && row.exercises.length) { state.exercises = row.exercises; changed = true; }
+      if ((!state.scheduleItems || !state.scheduleItems.length) && row.scheduleItems && row.scheduleItems.length) { state.scheduleItems = row.scheduleItems; changed = true; }
+      if (!changed) return;
+      // 화면 입력칸에도 반영 (render()가 직접 안 건드리는 항목들)
+      $('#weight').value = state.weight != null ? state.weight : '';
+      $('#waist').value = state.waist != null ? state.waist : '';
+      $('#thigh').value = state.thigh != null ? state.thigh : '';
+      $('#hip').value = state.hip != null ? state.hip : '';
+      $('#skipMeasure').checked = state.skipMeasure;
+      $('#morningFields').style.opacity = state.skipMeasure ? 0.45 : 1;
+      $$('#morningFields input').forEach(i => i.disabled = state.skipMeasure);
+      if (state.sleep != null) $('#sleepInput').value = state.sleep;
+      $('#noteInput').value = state.note || '';
+      $$('#tagRow .chip').forEach(chip => chip.classList.toggle('tag-selected', state.tags.includes(chip.textContent)));
       saveState();
       render();
       renderCalendar();
