@@ -444,6 +444,11 @@
   .day-modal-head h3 { font-size: 16px; margin: 0; }
   .day-modal-close { background: none; border: none; font-size: 20px; color: var(--ink-faint); cursor: pointer; line-height: 1; padding: 0; }
   .day-modal-close:hover { color: var(--ink); }
+  .day-modal-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
+  }
+  .day-modal-save-hint { font-size: 11px; color: var(--ink-faint); }
   .day-modal-recur { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
   .day-modal-subhead { font-size: 11.5px; color: var(--ink-faint); margin-top: 4px; }
   .day-modal-recur-item {
@@ -922,6 +927,10 @@
         </div>
       </div>
     </details>
+    <div class="day-modal-footer">
+      <span class="day-modal-save-hint">입력하는 대로 자동 저장돼요</span>
+      <button type="button" class="btn small" id="dayModalSaveBtn">✓ 저장 완료</button>
+    </div>
   </div>
 </div>
 
@@ -2481,6 +2490,7 @@
     input.addEventListener('blur', save);
   });
   $('#dayModalClose').addEventListener('click', closeDayModal_);
+  $('#dayModalSaveBtn').addEventListener('click', closeDayModal_);
   $('#dayModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'dayModalOverlay') closeDayModal_(); });
   $('#dayModalRecur').addEventListener('change', (e) => {
     const cb = e.target.closest('.recur-done-check');
