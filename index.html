@@ -188,13 +188,24 @@
   .sum-kcal .unit { font-size: 12px; color: var(--ink-soft); }
 
   .history-list { display: flex; flex-direction: column; gap: 6px; }
+  .history-head-row, .history-item {
+    display: grid; grid-template-columns: 48px repeat(4, 1fr) 56px; gap: 4px; align-items: center;
+  }
+  .history-head-row {
+    font-size: 10px; color: var(--ink-faint); padding: 0 12px 2px;
+    text-align: center;
+  }
+  .history-head-row span:first-child { text-align: left; }
   .history-item {
-    display: flex; flex-direction: column; gap: 3px;
-    padding: 9px 12px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13px;
+    padding: 9px 12px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 12.5px;
   }
   .history-item .history-date { font-weight: 700; color: var(--ink); }
-  .history-item .history-stats { color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
-  .history-item .history-stats b { color: var(--accent-ink); font-weight: 700; }
+  .history-item .history-stat {
+    color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; text-align: center;
+  }
+  .history-item .history-stat.weight { color: var(--accent-ink); font-weight: 700; }
+  .history-item .history-stat.kcal { text-align: right; }
+  .history-item .history-stat.empty { color: var(--ink-faint); }
 
   /* ---------- form basics ---------- */
   label { font-size: 12.5px; color: var(--ink-soft); display: block; margin-bottom: 5px; }
@@ -398,6 +409,9 @@
     <div class="section-head">
       <h2 style="margin:0;">지난 기록</h2>
       <span class="sub">최근 14일 · 구글시트 기준</span>
+    </div>
+    <div class="history-head-row">
+      <span></span><span>체중</span><span>허리</span><span>허벅지</span><span>골반</span><span>칼로리</span>
     </div>
     <div class="history-list" id="historyList"><div class="empty-row">불러오는 중…</div></div>
   </section>
@@ -1204,15 +1218,15 @@
     };
     el.innerHTML = dates.map(d => {
       const r = byDate[d];
-      const measureParts = [];
-      if (r.weight) measureParts.push(`<b>${r.weight}kg</b>`);
-      if (r.waist) measureParts.push(`허리${r.waist}`);
-      if (r.thigh) measureParts.push(`허벅지${r.thigh}`);
-      if (r.hip) measureParts.push(`골반${r.hip}`);
-      const measureLine = measureParts.length ? `<span class="history-stats">${measureParts.join(' · ')}</span>` : '';
-      const kcalLine = r.kcal ? `<span class="history-stats">${r.kcal}kcal</span>` : '';
-      const body = measureLine + kcalLine || '<span class="history-stats">기록 없음</span>';
-      return `<div class="history-item"><span class="history-date">${fmt(d)}</span>${body}</div>`;
+      const cell = (v, cls) => v ? `<span class="history-stat ${cls}">${v}</span>` : `<span class="history-stat empty">–</span>`;
+      return `<div class="history-item">` +
+        `<span class="history-date">${fmt(d)}</span>` +
+        cell(r.weight, 'weight') +
+        cell(r.waist, '') +
+        cell(r.thigh, '') +
+        cell(r.hip, '') +
+        cell(r.kcal, 'kcal') +
+        `</div>`;
     }).join('');
   }
 
