@@ -189,11 +189,11 @@
 
   .history-list { display: flex; flex-direction: column; gap: 6px; }
   .history-item {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    display: flex; flex-direction: column; gap: 3px;
     padding: 9px 12px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13px;
   }
-  .history-item .history-date { font-weight: 700; color: var(--ink); flex-shrink: 0; }
-  .history-item .history-stats { color: var(--ink-soft); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+  .history-item .history-date { font-weight: 700; color: var(--ink); }
+  .history-item .history-stats { color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
   .history-item .history-stats b { color: var(--accent-ink); font-weight: 700; }
 
   /* ---------- form basics ---------- */
@@ -1209,6 +1209,7 @@
       if (r.waist) parts.push(`허리${r.waist}`);
       if (r.thigh) parts.push(`허벅지${r.thigh}`);
       if (r.hip) parts.push(`골반${r.hip}`);
+      if (r.kcal) parts.push(`${r.kcal}kcal`);
       return `<div class="history-item"><span class="history-date">${fmt(d)}</span><span class="history-stats">${parts.length ? parts.join(' · ') : '기록 없음'}</span></div>`;
     }).join('');
   }
