@@ -1206,9 +1206,9 @@
       const r = byDate[d];
       const parts = [];
       if (r.weight) parts.push(`<b>${r.weight}kg</b>`);
-      if (r.kcal) parts.push(`${r.kcal}kcal`);
-      if (r.sleep != null && r.sleep !== '') parts.push(`수면${r.sleep}h`);
-      if (r.bowel === '배변함') parts.push('배변✓');
+      if (r.waist) parts.push(`허리${r.waist}`);
+      if (r.thigh) parts.push(`허벅지${r.thigh}`);
+      if (r.hip) parts.push(`골반${r.hip}`);
       return `<div class="history-item"><span class="history-date">${fmt(d)}</span><span class="history-stats">${parts.length ? parts.join(' · ') : '기록 없음'}</span></div>`;
     }).join('');
   }
