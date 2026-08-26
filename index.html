@@ -1204,13 +1204,15 @@
     };
     el.innerHTML = dates.map(d => {
       const r = byDate[d];
-      const parts = [];
-      if (r.weight) parts.push(`<b>${r.weight}kg</b>`);
-      if (r.waist) parts.push(`허리${r.waist}`);
-      if (r.thigh) parts.push(`허벅지${r.thigh}`);
-      if (r.hip) parts.push(`골반${r.hip}`);
-      if (r.kcal) parts.push(`${r.kcal}kcal`);
-      return `<div class="history-item"><span class="history-date">${fmt(d)}</span><span class="history-stats">${parts.length ? parts.join(' · ') : '기록 없음'}</span></div>`;
+      const measureParts = [];
+      if (r.weight) measureParts.push(`<b>${r.weight}kg</b>`);
+      if (r.waist) measureParts.push(`허리${r.waist}`);
+      if (r.thigh) measureParts.push(`허벅지${r.thigh}`);
+      if (r.hip) measureParts.push(`골반${r.hip}`);
+      const measureLine = measureParts.length ? `<span class="history-stats">${measureParts.join(' · ')}</span>` : '';
+      const kcalLine = r.kcal ? `<span class="history-stats">${r.kcal}kcal</span>` : '';
+      const body = measureLine + kcalLine || '<span class="history-stats">기록 없음</span>';
+      return `<div class="history-item"><span class="history-date">${fmt(d)}</span>${body}</div>`;
     }).join('');
   }
 
