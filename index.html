@@ -187,6 +187,15 @@
   .sum-kcal .num { font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 28px; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
   .sum-kcal .unit { font-size: 12px; color: var(--ink-soft); }
 
+  .history-list { display: flex; flex-direction: column; gap: 6px; }
+  .history-item {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    padding: 9px 12px; background: var(--paper-sunken); border-radius: var(--radius-s); font-size: 13px;
+  }
+  .history-item .history-date { font-weight: 700; color: var(--ink); flex-shrink: 0; }
+  .history-item .history-stats { color: var(--ink-soft); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+  .history-item .history-stats b { color: var(--accent-ink); font-weight: 700; }
+
   /* ---------- form basics ---------- */
   label { font-size: 12.5px; color: var(--ink-soft); display: block; margin-bottom: 5px; }
   input[type="text"], input[type="number"], select, textarea {
@@ -383,6 +392,14 @@
       </div>
     </div>
     <div class="pill-row" id="pillRow"></div>
+  </section>
+
+  <section class="card" id="historyCard">
+    <div class="section-head">
+      <h2 style="margin:0;">지난 기록</h2>
+      <span class="sub">최근 14일 · 구글시트 기준</span>
+    </div>
+    <div class="history-list" id="historyList"><div class="empty-row">불러오는 중…</div></div>
   </section>
 
   <section class="card" id="morningCard">
@@ -1168,6 +1185,32 @@
     } catch (e) { console.warn('오늘 기록 불러오기 실패', e); }
   }
 
+  // ---------- 지난 기록 (읽기 전용, 구글시트에서 최근 것만 불러와서 보여줌) ----------
+  async function renderHistory_() {
+    const el = $('#historyList');
+    if (!SHEETS_URL) { el.innerHTML = '<div class="empty-row">연동 주소가 설정되지 않았어요</div>'; return; }
+    const rows = await fetchSheetRows_(60);
+    if (!rows) { el.innerHTML = '<div class="empty-row">불러오기 실패 — 새로고침해서 다시 시도해보세요</div>'; return; }
+    const byDate = {};
+    rows.forEach(r => { if (r.date) byDate[r.date] = r; });
+    const dates = Object.keys(byDate).filter(d => d !== todayISO).sort().reverse().slice(0, 14);
+    if (!dates.length) { el.innerHTML = '<div class="empty-row">아직 지난 기록이 없어요</div>'; return; }
+    const dow = ['일','월','화','수','목','금','토'];
+    const fmt = (d) => {
+      const dateObj = new Date(d + 'T00:00:00');
+      return `${dateObj.getMonth() + 1}/${dateObj.getDate()} (${dow[dateObj.getDay()]})`;
+    };
+    el.innerHTML = dates.map(d => {
+      const r = byDate[d];
+      const parts = [];
+      if (r.weight) parts.push(`<b>${r.weight}kg</b>`);
+      if (r.kcal) parts.push(`${r.kcal}kcal`);
+      if (r.sleep != null && r.sleep !== '') parts.push(`수면${r.sleep}h`);
+      if (r.bowel === '배변함') parts.push('배변✓');
+      return `<div class="history-item"><span class="history-date">${fmt(d)}</span><span class="history-stats">${parts.length ? parts.join(' · ') : '기록 없음'}</span></div>`;
+    }).join('');
+  }
+
   function computeDayTotals() {
     const day = Object.values(state.meals).reduce((acc, items) => {
       const s = sumMacros(items);
@@ -1263,6 +1306,7 @@
 
   render();
   hydrateTodayFromSheets_();
+  renderHistory_();
 })();
 </script>
 </body>
