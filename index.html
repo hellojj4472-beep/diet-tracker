@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>다이어트 기록</title>
-<meta name="description" content="하루 식사·운동·수면·배변을 한 화면에서 기록하는 개인용 다이어트 트래커">
+<meta name="description" content="하루 식사·운동·체중을 한 화면에서 기록하는 개인용 다이어트 트래커">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -353,14 +353,6 @@
   }
   .exercise-item .kcal { font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 700; }
 
-  /* ---------- etc ---------- */
-  .bowel-toggle { display: flex; gap: 8px; }
-  .bowel-toggle button {
-    flex: 1; padding: 10px; border-radius: var(--radius-s); border: 1px solid var(--line);
-    background: var(--paper); color: var(--ink-soft); cursor: pointer; font-family: 'Gowun Dodum', sans-serif; font-size: 13.5px;
-  }
-  .bowel-toggle button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-
   .proto-note {
     font-size: 12px; color: var(--ink-faint); text-align: center;
     padding-top: 16px; border-top: 1px solid var(--line);
@@ -372,7 +364,7 @@
   <header class="top">
     <div class="title-block">
       <h1>다이어트 기록</h1>
-      <span class="tagline">오늘 하루의 식사·운동·수면·배변을 한 화면에서 기록하세요</span>
+      <span class="tagline">오늘 하루의 식사·운동·체중을 한 화면에서 기록하세요</span>
     </div>
     <div class="date" id="todayDate"></div>
   </header>
@@ -399,7 +391,6 @@
         <div class="sum-item"><div class="k">지방</div><div class="v" id="stFat">0<small>g</small></div></div>
         <div class="sum-item"><div class="k">단순당</div><div class="v" id="stSugar">0<small>g</small></div></div>
         <div class="sum-item"><div class="k">운동 소모</div><div class="v" id="stBurn">0<small>kcal</small></div></div>
-        <div class="sum-item"><div class="k">수면</div><div class="v" id="stSleep">–<small>시간</small></div></div>
       </div>
     </div>
     <div class="pill-row" id="pillRow"></div>
@@ -478,20 +469,7 @@
   </section>
 
   <section class="card" id="etcCard">
-    <div class="section-head"><h2 style="margin:0;">수면 · 배변 · 특이사항</h2></div>
-    <div class="field-row" style="grid-template-columns: 1fr; margin-bottom:16px;">
-      <div>
-        <label for="sleepInput">수면시간 (시간)</label>
-        <input type="number" id="sleepInput" step="0.5" min="0" max="14" placeholder="예: 6.5">
-      </div>
-    </div>
-
-    <label>배변 여부</label>
-    <div class="bowel-toggle" style="margin-bottom:18px;">
-      <button id="bowelYes" type="button">배변함</button>
-      <button id="bowelNo" type="button">배변 안 함</button>
-    </div>
-
+    <div class="section-head"><h2 style="margin:0;">특이사항</h2></div>
     <label>특이사항 태그</label>
     <div class="chip-row" id="tagRow"></div>
 
@@ -652,8 +630,6 @@
     weight: null, waist: null, thigh: null, hip: null,
     meals: { 아침: [], 점심: [], 간식: [], 저녁: [] },
     exercises: [],
-    sleep: null,
-    bowel: null,
     tags: [],
     note: '',
   };
@@ -1062,19 +1038,7 @@
     });
   }
 
-  // ---------- etc: sleep / bowel / tags ----------
-  if (state.sleep !== null) $('#sleepInput').value = state.sleep;
-  $('#sleepInput').addEventListener('input', (e) => {
-    state.sleep = e.target.value === '' ? null : parseFloat(e.target.value);
-    render();
-  });
-  $('#bowelYes').addEventListener('click', () => { state.bowel = true; render(); });
-  $('#bowelNo').addEventListener('click', () => { state.bowel = false; render(); });
-  function renderBowel() {
-    $('#bowelYes').classList.toggle('on', state.bowel === true);
-    $('#bowelNo').classList.toggle('on', state.bowel === false);
-  }
-
+  // ---------- etc: tags ----------
   const tagRow = $('#tagRow');
   TAGS.forEach(tag => {
     const chip = document.createElement('button');
@@ -1116,7 +1080,6 @@
     if (field === 'waist') $('#waist').value = value != null ? value : '';
     else if (field === 'thigh') $('#thigh').value = value != null ? value : '';
     else if (field === 'hip') $('#hip').value = value != null ? value : '';
-    else if (field === 'sleep') { if (value != null) $('#sleepInput').value = value; }
     else if (field === 'note') $('#noteInput').value = value || '';
     else if (field === 'tags') $$('#tagRow .chip').forEach(chip => chip.classList.toggle('tag-selected', value.includes(chip.textContent)));
     render();
@@ -1146,11 +1109,6 @@
     if (state.thigh == null && row.thigh != null && row.thigh !== '') { state.thigh = row.thigh; changed = true; }
     if (state.hip == null && row.hip != null && row.hip !== '') { state.hip = row.hip; changed = true; }
     if (!state.skipMeasure && row.skipMeasure) { state.skipMeasure = true; changed = true; }
-    if (state.sleep == null && row.sleep != null && row.sleep !== '') { state.sleep = row.sleep; changed = true; }
-    if (state.bowel === null) {
-      if (row.bowel === '배변함') { state.bowel = true; changed = true; }
-      else if (row.bowel === '배변안함') { state.bowel = false; changed = true; }
-    }
     if ((!state.tags || !state.tags.length) && row.tags) { state.tags = String(row.tags).split(',').filter(Boolean); changed = true; }
     if (!state.note && row.note) { state.note = row.note; changed = true; }
     if (row.meals) {
@@ -1181,7 +1139,6 @@
     $('#skipMeasure').checked = state.skipMeasure;
     $('#morningFields').style.opacity = state.skipMeasure ? 0.45 : 1;
     $$('#morningFields input').forEach(i => i.disabled = state.skipMeasure);
-    if (state.sleep != null) $('#sleepInput').value = state.sleep;
     $('#noteInput').value = state.note || '';
     $$('#tagRow .chip').forEach(chip => chip.classList.toggle('tag-selected', state.tags.includes(chip.textContent)));
   }
@@ -1244,7 +1201,6 @@
   function render() {
     renderMealCards();
     renderExercise();
-    renderBowel();
 
     const { day, burn, net } = computeDayTotals();
 
@@ -1255,7 +1211,6 @@
     $('#stFat').innerHTML = day.fat + '<small> g</small>';
     $('#stSugar').innerHTML = day.sugar + '<small> g</small>';
     $('#stBurn').innerHTML = burn + '<small> kcal</small>';
-    $('#stSleep').innerHTML = (state.sleep ?? '–') + '<small> 시간</small>';
 
     $('#dayTotalKcal').textContent = day.kcal + ' kcal';
     $('#dayCarb').textContent = day.carb;
@@ -1266,8 +1221,6 @@
     const pills = [];
     if (state.skipMeasure) pills.push(['neutral','오늘 측정 건너뜀']);
     else if (state.weight) pills.push(['good', `체중 ${state.weight}kg 기록됨`]);
-    pills.push(state.bowel === true ? ['good','배변 기록됨'] : state.bowel === false ? ['warn','배변 없음'] : ['neutral','배변 미입력']);
-    pills.push(state.sleep !== null && state.sleep < 6 ? ['bad', `수면 ${state.sleep}h · 부족`] : state.sleep !== null ? ['good', `수면 ${state.sleep}h`] : ['neutral','수면 미입력']);
     $('#pillRow').innerHTML = pills.map(([tone,label]) => `<span class="pill ${tone}"><span class="dot" style="background:currentColor"></span>${label}</span>`).join('');
 
     saveState();
@@ -1305,7 +1258,7 @@
         weight: state.weight, waist: state.waist, thigh: state.thigh, hip: state.hip,
         skipMeasure: state.skipMeasure,
         kcal: day.kcal, carb: day.carb, prot: day.prot, fat: day.fat, sugar: day.sugar,
-        burn, net, sleep: state.sleep, bowel: state.bowel, tags: state.tags, note: state.note,
+        burn, net, tags: state.tags, note: state.note,
         meals: state.meals, exercises: state.exercises,
       };
       const res = await fetch(SHEETS_URL, {

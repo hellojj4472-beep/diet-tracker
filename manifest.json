@@ -1,7 +1,7 @@
 {
   "name": "다이어트 기록",
   "short_name": "다이어트 기록",
-  "description": "식사·운동·수면·배변을 한 화면에서 기록하는 개인용 다이어트 트래커",
+  "description": "식사·운동·체중을 한 화면에서 기록하는 개인용 다이어트 트래커",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
