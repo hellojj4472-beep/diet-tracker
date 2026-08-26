@@ -206,6 +206,8 @@
   .history-item .history-stat.weight { color: var(--accent-ink); font-weight: 700; }
   .history-item .history-stat.kcal { text-align: right; }
   .history-item .history-stat.empty { color: var(--ink-faint); }
+  .history-item.today { background: var(--accent-soft); }
+  .history-item.today .history-date { color: var(--accent-ink); }
 
   /* ---------- form basics ---------- */
   label { font-size: 12.5px; color: var(--ink-soft); display: block; margin-bottom: 5px; }
@@ -1157,26 +1159,29 @@
   }
 
   // ---------- 지난 기록 (읽기 전용, 구글시트에서 최근 것만 불러와서 보여줌) ----------
-  async function renderHistory_() {
+  let historyRowsCache = null; // 구글시트에서 불러온 지난 날짜 기록 (네트워크 재조회 없이 재사용)
+  // 오늘 칸은 저장 여부와 상관없이 지금 화면에 입력된 값으로 항상 최신 반영
+  function renderHistoryList_() {
     const el = $('#historyList');
-    if (!SHEETS_URL) { el.innerHTML = '<div class="empty-row">연동 주소가 설정되지 않았어요</div>'; return; }
-    const rows = await fetchSheetRows_(200);
-    if (!rows) { el.innerHTML = '<div class="empty-row">불러오기 실패 — 새로고침해서 다시 시도해보세요</div>'; return; }
     const byDate = {};
-    rows.forEach(r => { if (r.date) byDate[r.date] = r; });
+    if (historyRowsCache) historyRowsCache.forEach(r => { if (r.date) byDate[r.date] = r; });
+    const { day } = computeDayTotals();
+    byDate[todayISO] = Object.assign({}, byDate[todayISO], {
+      weight: state.weight, waist: state.waist, thigh: state.thigh, hip: state.hip, kcal: day.kcal || '',
+    });
     const dates = Object.keys(byDate)
-      .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d < todayISO)
+      .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d <= todayISO)
       .sort().reverse().slice(0, 14);
-    if (!dates.length) { el.innerHTML = '<div class="empty-row">아직 지난 기록이 없어요</div>'; return; }
+    if (!dates.length) { el.innerHTML = '<div class="empty-row">아직 기록이 없어요</div>'; return; }
     const dow = ['일','월','화','수','목','금','토'];
     const fmt = (d) => {
       const dateObj = new Date(d + 'T00:00:00');
-      return `${dateObj.getMonth() + 1}/${dateObj.getDate()} (${dow[dateObj.getDay()]})`;
+      return `${dateObj.getMonth() + 1}/${dateObj.getDate()} (${dow[dateObj.getDay()]})` + (d === todayISO ? ' · 오늘' : '');
     };
     el.innerHTML = dates.map(d => {
       const r = byDate[d];
       const cell = (v, cls) => v ? `<span class="history-stat ${cls}">${v}</span>` : `<span class="history-stat empty">–</span>`;
-      return `<div class="history-item">` +
+      return `<div class="history-item${d === todayISO ? ' today' : ''}">` +
         `<span class="history-date">${fmt(d)}</span>` +
         cell(r.weight, 'weight') +
         cell(r.waist, '') +
@@ -1185,6 +1190,14 @@
         cell(r.kcal, 'kcal') +
         `</div>`;
     }).join('');
+  }
+  async function renderHistory_() {
+    const el = $('#historyList');
+    if (!SHEETS_URL) { renderHistoryList_(); return; }
+    const rows = await fetchSheetRows_(200);
+    if (!rows) { el.innerHTML = '<div class="empty-row">불러오기 실패 — 새로고침해서 다시 시도해보세요</div>'; return; }
+    historyRowsCache = rows;
+    renderHistoryList_();
   }
 
   function computeDayTotals() {
@@ -1223,6 +1236,7 @@
     else if (state.weight) pills.push(['good', `체중 ${state.weight}kg 기록됨`]);
     $('#pillRow').innerHTML = pills.map(([tone,label]) => `<span class="pill ${tone}"><span class="dot" style="background:currentColor"></span>${label}</span>`).join('');
 
+    renderHistoryList_();
     saveState();
   }
 
