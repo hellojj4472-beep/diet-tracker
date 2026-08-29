@@ -415,6 +415,10 @@
       <input type="checkbox" id="skipMeasure">
       <label for="skipMeasure" style="margin:0;">오늘은 측정 안 함</label>
     </div>
+    <div class="check-row">
+      <input type="checkbox" id="sameAsYesterday">
+      <label for="sameAsYesterday" style="margin:0;">둘레 어제와 같음</label>
+    </div>
     <div class="field-row" id="morningFields">
       <div>
         <label for="weight">체중 (kg)</label>
@@ -693,6 +697,30 @@
       ['weight', 'waist', 'thigh', 'hip'].forEach(id => { state[id] = null; $('#' + id).value = ''; });
     }
     render();
+  });
+  function yesterdayISO_() {
+    const d = new Date(today);
+    d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  async function applySameAsYesterday_() {
+    const yISO = yesterdayISO_();
+    let row = historyRowsCache && historyRowsCache.find(r => r.date === yISO);
+    if (!row) row = (await fetchSheetRows_(5) || []).find(r => r.date === yISO);
+    if (!row || (row.waist === '' && row.thigh === '' && row.hip === '') ||
+        (row.waist == null && row.thigh == null && row.hip == null)) {
+      alert('어제 둘레 기록을 찾을 수 없어요');
+      $('#sameAsYesterday').checked = false;
+      return;
+    }
+    // 몸무게는 그대로 두고 둘레(허리/허벅지/골반)만 어제 값으로 채움
+    if (row.waist != null && row.waist !== '') saveDayField_(todayISO, 'waist', parseFloat(row.waist));
+    if (row.thigh != null && row.thigh !== '') saveDayField_(todayISO, 'thigh', parseFloat(row.thigh));
+    if (row.hip != null && row.hip !== '') saveDayField_(todayISO, 'hip', parseFloat(row.hip));
+    $('#sameAsYesterday').checked = false;
+  }
+  $('#sameAsYesterday').addEventListener('change', (e) => {
+    if (e.target.checked) applySameAsYesterday_();
   });
   ['weight','waist','thigh','hip'].forEach(id => {
     const input = $('#' + id);
