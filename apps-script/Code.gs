@@ -136,6 +136,15 @@ function setWorkOnly_(sheet, payload) {
   return { ok: true };
 }
 
+// 지난 날짜 기록을 통째로 삭제 (칼로리를 덜 입력했거나 잘못 저장된 날 등을 지울 때 사용)
+function deleteDay_(sheet, payload) {
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = findRowIndex_(data, payload.date);
+  if (rowIndex === -1) return { ok: false, error: 'row not found' };
+  sheet.deleteRow(rowIndex);
+  return { ok: true };
+}
+
 // 지난 날짜 팝업에서 개별 항목(허리/허벅지/골반/수면/배변/특이사항/메모/식사/운동) 하나만 업데이트
 var FIELD_TO_HEADER = {
   waist: '허리둘레', thigh: '허벅지둘레', hip: '골반둘레',
@@ -209,6 +218,9 @@ function doPost(e) {
     }
     if (payload.action === 'totals') {
       return jsonOutput_(setTotalsOnly_(sheet, payload));
+    }
+    if (payload.action === 'deleteDay') {
+      return jsonOutput_(deleteDay_(sheet, payload));
     }
     var data = sheet.getDataRange().getValues();
     var rowIndex = findRowIndex_(data, payload.date);

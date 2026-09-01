@@ -189,7 +189,7 @@
 
   .history-list { display: flex; flex-direction: column; gap: 6px; }
   .history-head-row, .history-item {
-    display: grid; grid-template-columns: 48px repeat(4, 1fr) 56px; gap: 4px; align-items: center;
+    display: grid; grid-template-columns: 48px repeat(4, 1fr) 56px 20px; gap: 4px; align-items: center;
   }
   .history-head-row {
     font-size: 10px; color: var(--ink-faint); padding: 0 12px 2px;
@@ -208,6 +208,11 @@
   .history-item .history-stat.empty { color: var(--ink-faint); }
   .history-item.today { background: var(--accent-soft); }
   .history-item.today .history-date { color: var(--accent-ink); }
+  .history-del-btn {
+    border: none; background: none; color: var(--ink-faint); font-size: 14px; line-height: 1;
+    cursor: pointer; padding: 2px; border-radius: 4px;
+  }
+  .history-del-btn:hover { color: #d64545; background: rgba(214,69,69,0.1); }
 
   /* ---------- form basics ---------- */
   label { font-size: 12.5px; color: var(--ink-soft); display: block; margin-bottom: 5px; }
@@ -404,7 +409,7 @@
       <span class="sub">최근 14일 · 구글시트 기준</span>
     </div>
     <div class="history-head-row">
-      <span></span><span>체중</span><span>허리</span><span>허벅지</span><span>골반</span><span>칼로리</span>
+      <span></span><span>체중</span><span>허리</span><span>허벅지</span><span>골반</span><span>칼로리</span><span></span>
     </div>
     <div class="history-list" id="historyList"><div class="empty-row">불러오는 중…</div></div>
   </section>
@@ -527,6 +532,8 @@
     { label:'그릭두유', type:'weight', unitLabel:'g', baseAmount:100, carb:7, prot:13, fat:4.5, sugar:0, kcal:109 },
     { label:'우유', type:'weight', unitLabel:'ml', baseAmount:200, carb:10, prot:7, fat:7, sugar:10, kcal:125 },
     { label:'샐러드(드레싱포함)', type:'count', unitLabel:'인분', baseAmount:1, carb:15, prot:4, fat:10, sugar:8, kcal:170 },
+    { label:'서브웨이 로티세리 샐러드', type:'count', unitLabel:'인분', baseAmount:1, carb:11, prot:22, fat:5, sugar:4, kcal:165 },
+    { label:'서브웨이 스테이크 큐브 샐러드', type:'count', unitLabel:'인분', baseAmount:1, carb:13, prot:19, fat:5, sugar:5, kcal:175 },
     { label:'방울토마토', type:'weight', unitLabel:'g', baseAmount:100, carb:4, prot:1, fat:0.2, sugar:3, kcal:20 },
     { label:'오이', type:'count', unitLabel:'개', baseAmount:1, carb:3, prot:1, fat:0.1, sugar:2, kcal:15 },
     { label:'바나나', type:'count', unitLabel:'개', baseAmount:1, carb:27, prot:1.3, fat:0.4, sugar:14, kcal:105 },
@@ -547,6 +554,7 @@
     { label:'짜장면', type:'count', unitLabel:'그릇', baseAmount:1, carb:90, prot:15, fat:20, sugar:8, kcal:700 },
     { label:'라면(조리)', type:'count', unitLabel:'개', baseAmount:1, carb:78, prot:10, fat:16, sugar:3, kcal:500 },
     { label:'식빵', type:'count', unitLabel:'장', baseAmount:1, carb:15, prot:3, fat:1, sugar:2, kcal:85 },
+    { label:'또띠아', type:'count', unitLabel:'장', baseAmount:1, carb:24, prot:4, fat:3.5, sugar:1, kcal:140 },
     { label:'크로와상', type:'count', unitLabel:'개', baseAmount:1, carb:26, prot:5, fat:12, sugar:5, kcal:230 },
     { label:'치아바타', type:'count', unitLabel:'개', baseAmount:1, carb:42, prot:7, fat:2, sugar:2, kcal:217 },
     { label:'샌드위치', type:'count', unitLabel:'개', baseAmount:1, carb:35, prot:15, fat:14, sugar:6, kcal:330 },
@@ -1224,6 +1232,7 @@
         cell(r.thigh, '') +
         cell(r.hip, '') +
         cell(r.kcal, 'kcal') +
+        (d === todayISO ? '<span></span>' : `<button type="button" class="history-del-btn" data-date="${d}" title="이 날 기록 삭제">✕</button>`) +
         `</div>`;
     }).join('');
   }
@@ -1235,6 +1244,29 @@
     historyRowsCache = rows;
     renderHistoryList_();
   }
+  // 지난 기록 삭제 (칼로리를 덜 입력했거나 잘못 저장된 날 등을 지우고 싶을 때)
+  async function deleteHistoryDay_(dateStr) {
+    if (!confirm(`${dateStr} 기록을 삭제할까요? 되돌릴 수 없어요.`)) return;
+    if (!SHEETS_URL) return;
+    try {
+      const res = await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'deleteDay', date: dateStr }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'delete failed');
+      if (historyRowsCache) historyRowsCache = historyRowsCache.filter(r => r.date !== dateStr);
+      renderHistoryList_();
+    } catch (err) {
+      console.warn('기록 삭제 실패', err);
+      alert('삭제에 실패했어요. 잠시 후 다시 시도해주세요.');
+    }
+  }
+  $('#historyList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.history-del-btn');
+    if (btn) deleteHistoryDay_(btn.dataset.date);
+  });
 
   function computeDayTotals() {
     const day = Object.values(state.meals).reduce((acc, items) => {
