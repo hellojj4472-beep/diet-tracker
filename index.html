@@ -1235,7 +1235,7 @@
         cell(r.thigh, '') +
         cell(r.hip, '') +
         cell(r.kcal, 'kcal') +
-        (d === todayISO ? '<span></span>' : `<button type="button" class="history-del-btn" data-date="${d}" title="이 날 기록 삭제">✕</button>`) +
+        (d === todayISO ? '<span></span>' : `<button type="button" class="history-del-btn" data-date="${d}" title="이 날 칼로리만 지우기 (체중·둘레는 남음)">✕</button>`) +
         `</div>`;
     }).join('');
   }
@@ -1247,19 +1247,22 @@
     historyRowsCache = rows;
     renderHistoryList_();
   }
-  // 지난 기록 삭제 (칼로리를 덜 입력했거나 잘못 저장된 날 등을 지우고 싶을 때)
+  // 지난 기록의 칼로리만 지우기 (체중/허리/허벅지/골반 둘레는 그대로 남음) — 칼로리를 덜 입력했거나 잘못 저장된 날 등을 지우고 싶을 때
   async function deleteHistoryDay_(dateStr) {
-    if (!confirm(`${dateStr} 기록을 삭제할까요? 되돌릴 수 없어요.`)) return;
+    if (!confirm(`${dateStr}의 칼로리 기록만 지울까요? 체중·둘레는 그대로 남아요. (되돌릴 수 없어요)`)) return;
     if (!SHEETS_URL) return;
     try {
       const res = await fetch(SHEETS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'deleteDay', date: dateStr }),
+        body: JSON.stringify({ token: SHEETS_TOKEN, action: 'clearKcal', date: dateStr }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'delete failed');
-      if (historyRowsCache) historyRowsCache = historyRowsCache.filter(r => r.date !== dateStr);
+      if (!data.ok) throw new Error(data.error || 'clear failed');
+      if (historyRowsCache) {
+        const r = historyRowsCache.find(row => row.date === dateStr);
+        if (r) { r.kcal = ''; r.carb = 0; r.prot = 0; r.fat = 0; r.sugar = 0; r.meals = {}; r.exercises = []; }
+      }
       renderHistoryList_();
     } catch (err) {
       console.warn('기록 삭제 실패', err);

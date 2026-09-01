@@ -136,12 +136,18 @@ function setWorkOnly_(sheet, payload) {
   return { ok: true };
 }
 
-// 지난 날짜 기록을 통째로 삭제 (칼로리를 덜 입력했거나 잘못 저장된 날 등을 지울 때 사용)
-function deleteDay_(sheet, payload) {
+// 지난 날짜의 칼로리 관련 칸만 지움 (체중/허리둘레/허벅지둘레/골반둘레는 그대로 유지)
+// 칼로리를 덜 입력했거나 잘못 저장된 날의 식사/칼로리 기록만 지우고 싶을 때 사용
+function clearKcalOnly_(sheet, payload) {
   var data = sheet.getDataRange().getValues();
   var rowIndex = findRowIndex_(data, payload.date);
   if (rowIndex === -1) return { ok: false, error: 'row not found' };
-  sheet.deleteRow(rowIndex);
+  var zeroFields = ['섭취칼로리', '탄수화물', '단백질', '지방', '단순당', '운동소모칼로리', '순섭취칼로리'];
+  zeroFields.forEach(function (h) {
+    sheet.getRange(rowIndex, HEADERS.indexOf(h) + 1).setValue(0);
+  });
+  sheet.getRange(rowIndex, HEADERS.indexOf('식사상세JSON') + 1).setValue(JSON.stringify({}));
+  sheet.getRange(rowIndex, HEADERS.indexOf('운동상세JSON') + 1).setValue(JSON.stringify([]));
   return { ok: true };
 }
 
@@ -219,8 +225,8 @@ function doPost(e) {
     if (payload.action === 'totals') {
       return jsonOutput_(setTotalsOnly_(sheet, payload));
     }
-    if (payload.action === 'deleteDay') {
-      return jsonOutput_(deleteDay_(sheet, payload));
+    if (payload.action === 'clearKcal') {
+      return jsonOutput_(clearKcalOnly_(sheet, payload));
     }
     var data = sheet.getDataRange().getValues();
     var rowIndex = findRowIndex_(data, payload.date);
